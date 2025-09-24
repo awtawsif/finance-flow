@@ -47,40 +47,48 @@ function restoreCategoryIcons(storedCategories: Omit<Category, 'icon'>[]): Categ
 }
 
 export default function Dashboard() {
-  const [expenses, setExpenses] = React.useState<Expense[]>(() => 
-    getFromLocalStorage<Expense[]>('expenses', [])
-  );
-  const [categories, setCategories] = React.useState<Category[]>(() =>
-    restoreCategoryIcons(getFromLocalStorage<Omit<Category, 'icon'>[]>('categories', initialCategories.map(({ icon, ...rest }) => rest)))
-  );
-  const [budgets, setBudgets] = React.useState<Record<string, number>>(() =>
-    getFromLocalStorage<Record<string, number>>('budgets', {})
-  );
-  const [overallBudget, setOverallBudget] = React.useState<number>(() =>
-    getFromLocalStorage<number>('overallBudget', 0)
-  );
+  const [isClient, setIsClient] = React.useState(false);
+
+  const [expenses, setExpenses] = React.useState<Expense[]>([]);
+  const [categories, setCategories] = React.useState<Category[]>(initialCategories);
+  const [budgets, setBudgets] = React.useState<Record<string, number>>({});
+  const [overallBudget, setOverallBudget] = React.useState<number>(0);
   
   const [categoryMap, setCategoryMap] = React.useState(() => new Map(categories.map(cat => [cat.id, cat])));
   const [expenseToEdit, setExpenseToEdit] = React.useState<Expense | null>(null);
+
+  // Load data from localStorage on initial client-side render
+  React.useEffect(() => {
+    setExpenses(getFromLocalStorage<Expense[]>('expenses', []));
+    setCategories(restoreCategoryIcons(getFromLocalStorage<Omit<Category, 'icon'>[]>('categories', initialCategories.map(({ icon, ...rest }) => rest))));
+    setBudgets(getFromLocalStorage<Record<string, number>>('budgets', {}));
+    setOverallBudget(getFromLocalStorage<number>('overallBudget', 0));
+    setIsClient(true);
+  }, []);
+
   
   // Persist state to localStorage whenever it changes
   React.useEffect(() => {
+    if (!isClient) return;
     localStorage.setItem('expenses', JSON.stringify(expenses));
-  }, [expenses]);
+  }, [expenses, isClient]);
   
   React.useEffect(() => {
+    if (!isClient) return;
     // We create a version of categories for serialization that omits the icon
     const serializableCategories = categories.map(({ icon, ...rest }) => rest);
     localStorage.setItem('categories', JSON.stringify(serializableCategories));
-  }, [categories]);
+  }, [categories, isClient]);
   
   React.useEffect(() => {
+    if (!isClient) return;
     localStorage.setItem('budgets', JSON.stringify(budgets));
-  }, [budgets]);
+  }, [budgets, isClient]);
   
   React.useEffect(() => {
+    if (!isClient) return;
     localStorage.setItem('overallBudget', JSON.stringify(overallBudget));
-  }, [overallBudget]);
+  }, [overallBudget, isClient]);
 
   React.useEffect(() => {
     setCategoryMap(new Map(categories.map(cat => [cat.id, cat])));
@@ -156,6 +164,11 @@ export default function Dashboard() {
   }, [expenses, budgets, overallBudget, totalAllocatedBudget]);
 
   const remainingBudget = totalBudget - totalSpending;
+
+  // Render a loading state or nothing until the component has mounted on the client
+  if (!isClient) {
+    return null;
+  }
   
   return (
     <>
