@@ -33,8 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { categories } from '@/lib/data';
-import type { Budget } from '@/lib/definitions';
+import type { Budget, Category } from '@/lib/definitions';
 
 const formSchema = z.object({
   limit: z.coerce.number().positive({ message: 'Limit must be a positive number.' }),
@@ -46,9 +45,10 @@ type SetBudgetFormValues = z.infer<typeof formSchema>;
 interface SetBudgetProps {
   budgets: Budget[];
   onSetBudget: (budget: Budget) => void;
+  categories: Category[];
 }
 
-export function SetBudget({ budgets, onSetBudget }: SetBudgetProps) {
+export function SetBudget({ budgets, onSetBudget, categories }: SetBudgetProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
 

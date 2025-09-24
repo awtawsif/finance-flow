@@ -33,8 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { categories } from '@/lib/data';
-import type { Expense } from '@/lib/definitions';
+import type { Expense, Category } from '@/lib/definitions';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -46,9 +45,10 @@ type AddExpenseFormValues = z.infer<typeof formSchema>;
 
 interface AddExpenseProps {
   onAddExpense: (expense: Omit<Expense, 'id' | 'date'>) => void;
+  categories: Category[];
 }
 
-export function AddExpense({ onAddExpense }: AddExpenseProps) {
+export function AddExpense({ onAddExpense, categories }: AddExpenseProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
 
@@ -56,7 +56,7 @@ export function AddExpense({ onAddExpense }: AddExpenseProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: '',
-      amount: '' as any,
+      amount: '',
       categoryId: '',
     },
   });

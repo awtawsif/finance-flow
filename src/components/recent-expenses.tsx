@@ -4,12 +4,12 @@ import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import type { Expense } from '@/lib/definitions';
-import { categoryMap } from '@/lib/data';
+import type { Expense, Category } from '@/lib/definitions';
 import { format } from 'date-fns';
 
 interface RecentExpensesProps {
   expenses: Expense[];
+  categoryMap: Map<string, Category>;
 }
 
 function FormattedDate({ date }: { date: Date }) {
@@ -19,10 +19,14 @@ function FormattedDate({ date }: { date: Date }) {
     setIsClient(true);
   }, []);
 
-  return isClient ? format(new Date(date), 'MMM d, yyyy') : null;
+  if (!isClient) {
+    return null;
+  }
+
+  return <>{format(new Date(date), 'MMM d, yyyy')}</>;
 }
 
-export function RecentExpenses({ expenses }: RecentExpensesProps) {
+export function RecentExpenses({ expenses, categoryMap }: RecentExpensesProps) {
   return (
     <Card>
       <CardHeader>

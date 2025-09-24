@@ -3,17 +3,18 @@
 import * as React from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import type { Expense, Budget } from '@/lib/definitions';
-import { categoryMap } from '@/lib/data';
+import type { Expense, Budget, Category } from '@/lib/definitions';
 import { SetBudget } from '@/components/set-budget';
 
 interface BudgetOverviewProps {
   expenses: Expense[];
   budgets: Budget[];
   onSetBudget: (budget: Budget) => void;
+  categories: Category[];
+  categoryMap: Map<string, Category>;
 }
 
-export function BudgetOverview({ expenses, budgets, onSetBudget }: BudgetOverviewProps) {
+export function BudgetOverview({ expenses, budgets, onSetBudget, categories, categoryMap }: BudgetOverviewProps) {
   const budgetData = React.useMemo(() => {
     return budgets.map((budget) => {
       const category = categoryMap.get(budget.categoryId);
@@ -33,7 +34,7 @@ export function BudgetOverview({ expenses, budgets, onSetBudget }: BudgetOvervie
         overBudget: progress > 100
       };
     }).filter((item): item is NonNullable<typeof item> => item !== null);
-  }, [expenses, budgets]);
+  }, [expenses, budgets, categoryMap]);
 
   return (
     <Card>
@@ -42,7 +43,7 @@ export function BudgetOverview({ expenses, budgets, onSetBudget }: BudgetOvervie
           <CardTitle>Budget Overview</CardTitle>
           <CardDescription>Your spending progress against monthly budgets.</CardDescription>
         </div>
-        <SetBudget budgets={budgets} onSetBudget={onSetBudget} />
+        <SetBudget budgets={budgets} onSetBudget={onSetBudget} categories={categories} />
       </CardHeader>
       <CardContent className="space-y-6">
         {budgetData.length > 0 ? budgetData.map((item) => (

@@ -1,16 +1,24 @@
 'use client';
 
 import * as React from 'react';
-import { initialExpenses, initialBudgets } from '@/lib/data';
-import type { Expense, Budget } from '@/lib/definitions';
+import { initialExpenses, initialBudgets, initialCategories } from '@/lib/data';
+import type { Expense, Budget, Category } from '@/lib/definitions';
 import { SummaryCard } from '@/components/summary-card';
 import { AddExpense } from '@/components/add-expense';
 import { BudgetOverview } from '@/components/budget-overview';
 import { RecentExpenses } from '@/components/recent-expenses';
+import { AddCategory } from '@/components/add-category';
+import { Shapes } from 'lucide-react';
 
 export default function Dashboard() {
   const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenses);
   const [budgets, setBudgets] = React.useState<Budget[]>(initialBudgets);
+  const [categories, setCategories] = React.useState<Category[]>(initialCategories);
+  const [categoryMap, setCategoryMap] = React.useState(() => new Map(initialCategories.map(cat => [cat.id, cat])));
+
+  React.useEffect(() => {
+    setCategoryMap(new Map(categories.map(cat => [cat.id, cat])));
+  }, [categories]);
 
   const handleAddExpense = React.useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
     const newExpense: Expense = {
@@ -33,6 +41,18 @@ export default function Dashboard() {
     });
   }, []);
 
+  const handleAddCategory = React.useCallback((categoryName: string) => {
+    const newCategory: Category = {
+      id: `cat-${Date.now()}`,
+      name: categoryName,
+      icon: Shapes,
+      // Generate a random HSL color
+      color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+    };
+    setCategories((prev) => [...prev, newCategory]);
+  }, []);
+
+
   const { totalSpending, totalBudget } = React.useMemo(() => {
     const totalSpending = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     const totalBudget = budgets.reduce((sum, bud) => sum + bud.limit, 0);
@@ -47,7 +67,10 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
           Welcome Back!
         </h1>
-        <AddExpense onAddExpense={handleAddExpense} />
+        <div className="flex gap-2">
+          <AddCategory onAddCategory={handleAddCategory} />
+          <AddExpense onAddExpense={handleAddExpense} categories={categories} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -71,10 +94,10 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-            <RecentExpenses expenses={expenses} />
+            <RecentExpenses expenses={expenses} categoryMap={categoryMap} />
         </div>
         <div className="lg:col-span-1">
-            <BudgetOverview expenses={expenses} budgets={budgets} onSetBudget={handleSetBudget} />
+            <BudgetOverview expenses={expenses} budgets={budgets} onSetBudget={handleSetBudget} categories={categories} categoryMap={categoryMap} />
         </div>
       </div>
     </div>
