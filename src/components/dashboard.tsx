@@ -1,19 +1,19 @@
 'use client';
 
 import * as React from 'react';
-import { initialExpenses, initialBudgets, initialCategories } from '@/lib/data';
-import type { Expense, Budget, Category } from '@/lib/definitions';
+import { initialCategories } from '@/lib/data';
+import type { Expense, Category } from '@/lib/definitions';
 import { SummaryCard } from '@/components/summary-card';
 import { AddExpense } from '@/components/add-expense';
-import { BudgetOverview } from '@/components/budget-overview';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { AddCategory } from '@/components/add-category';
 import { Shapes } from 'lucide-react';
+import { SetOverallBudget } from '@/components/set-overall-budget';
 
 export default function Dashboard() {
-  const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenses);
-  const [budgets, setBudgets] = React.useState<Budget[]>(initialBudgets);
+  const [expenses, setExpenses] = React.useState<Expense[]>([]);
   const [categories, setCategories] = React.useState<Category[]>(initialCategories);
+  const [overallBudget, setOverallBudget] = React.useState<number>(0);
   const [categoryMap, setCategoryMap] = React.useState(() => new Map(initialCategories.map(cat => [cat.id, cat])));
 
   React.useEffect(() => {
@@ -29,16 +29,8 @@ export default function Dashboard() {
     setExpenses((prev) => [newExpense, ...prev]);
   }, []);
   
-  const handleSetBudget = React.useCallback((newBudgetData: Budget) => {
-    setBudgets((prev) => {
-      const existingBudgetIndex = prev.findIndex(b => b.categoryId === newBudgetData.categoryId);
-      if (existingBudgetIndex > -1) {
-        const updatedBudgets = [...prev];
-        updatedBudgets[existingBudgetIndex] = newBudgetData;
-        return updatedBudgets;
-      }
-      return [...prev, newBudgetData];
-    });
+  const handleSetOverallBudget = React.useCallback((newBudget: number) => {
+    setOverallBudget(newBudget);
   }, []);
 
   const handleAddCategory = React.useCallback((categoryName: string) => {
@@ -55,9 +47,8 @@ export default function Dashboard() {
 
   const { totalSpending, totalBudget } = React.useMemo(() => {
     const totalSpending = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const totalBudget = budgets.reduce((sum, bud) => sum + bud.limit, 0);
-    return { totalSpending, totalBudget };
-  }, [expenses, budgets]);
+    return { totalSpending, totalBudget: overallBudget };
+  }, [expenses, overallBudget]);
 
   const remainingBudget = totalBudget - totalSpending;
   
@@ -68,6 +59,7 @@ export default function Dashboard() {
           Welcome Back!
         </h1>
         <div className="flex gap-2">
+          <SetOverallBudget onSetBudget={handleSetOverallBudget} currentBudget={overallBudget} />
           <AddCategory onAddCategory={handleAddCategory} />
           <AddExpense onAddExpense={handleAddExpense} categories={categories} />
         </div>
@@ -92,13 +84,8 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-            <RecentExpenses expenses={expenses} categoryMap={categoryMap} />
-        </div>
-        <div className="lg:col-span-1">
-            <BudgetOverview expenses={expenses} budgets={budgets} onSetBudget={handleSetBudget} categories={categories} categoryMap={categoryMap} />
-        </div>
+      <div className="grid grid-cols-1">
+        <RecentExpenses expenses={expenses} categoryMap={categoryMap} />
       </div>
     </div>
   );
