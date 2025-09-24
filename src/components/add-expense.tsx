@@ -56,7 +56,7 @@ export function AddExpense({ onAddExpense }: AddExpenseProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: '',
-      amount: undefined,
+      amount: '' as any,
       categoryId: '',
     },
   });
