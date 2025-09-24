@@ -1,13 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { initialExpenses, initialBudgets, spendingSummary as summaryData } from '@/lib/data';
+import { initialExpenses, initialBudgets } from '@/lib/data';
 import type { Expense, Budget } from '@/lib/definitions';
 import { SummaryCard } from '@/components/summary-card';
 import { AddExpense } from '@/components/add-expense';
 import { BudgetOverview } from '@/components/budget-overview';
 import { RecentExpenses } from '@/components/recent-expenses';
-import { SpendingSummary } from '@/components/spending-summary';
 
 export default function Dashboard() {
   const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenses);
@@ -70,12 +69,11 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-        <div className="flex flex-col gap-8 lg:col-span-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2">
             <RecentExpenses expenses={expenses} />
         </div>
-        <div className="flex flex-col gap-8 lg:col-span-2">
-            <SpendingSummary title={summaryData.title} analysis={summaryData.analysis} />
+        <div className="lg:col-span-1">
             <BudgetOverview expenses={expenses} budgets={budgets} onSetBudget={handleSetBudget} />
         </div>
       </div>

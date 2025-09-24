@@ -23,9 +23,4 @@ export const initialExpenses: Expense[] = [];
 
 export const initialBudgets: Budget[] = [];
 
-export const spendingSummary = {
-  title: "Your Financial Health",
-  analysis: "Start adding expenses and setting budgets to see your financial health analysis.",
-};
-
 export const categoryMap = new Map(categories.map(cat => [cat.id, cat]));
