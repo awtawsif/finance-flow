@@ -36,19 +36,13 @@ function getFromLocalStorage<T>(key: string, defaultValue: T): T {
 }
 
 // Helper to restore icon functions to categories loaded from localStorage
-function restoreCategoryIcons(storedCategories: Category[]): Category[] {
+function restoreCategoryIcons(storedCategories: Omit<Category, 'icon'>[]): Category[] {
   const initialCategoryMap = new Map(initialCategories.map(cat => [cat.id, cat.icon]));
   return storedCategories.map(cat => {
-    // If the icon is missing or not a function, restore it.
-    // New categories will default to Shapes icon.
-    // Existing initial categories will get their original icon back.
-    if (!cat.icon) {
       return {
         ...cat,
         icon: initialCategoryMap.get(cat.id) || Shapes,
       };
-    }
-    return cat;
   });
 }
 
@@ -57,7 +51,7 @@ export default function Dashboard() {
     getFromLocalStorage<Expense[]>('expenses', [])
   );
   const [categories, setCategories] = React.useState<Category[]>(() =>
-    restoreCategoryIcons(getFromLocalStorage<Category[]>('categories', initialCategories))
+    restoreCategoryIcons(getFromLocalStorage<Omit<Category, 'icon'>[]>('categories', initialCategories.map(({ icon, ...rest }) => rest)))
   );
   const [budgets, setBudgets] = React.useState<Record<string, number>>(() =>
     getFromLocalStorage<Record<string, number>>('budgets', {})
