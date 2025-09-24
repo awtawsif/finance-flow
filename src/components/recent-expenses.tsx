@@ -85,7 +85,7 @@ export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteE
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-mono">Tk {expense.amount.toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-mono">{expense.amount.toFixed(2)}</TableCell>
                   <TableCell className="hidden pr-0 sm:table-cell"><FormattedDate date={expense.date} /></TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
