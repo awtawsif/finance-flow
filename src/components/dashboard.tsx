@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { initialExpenses, initialBudgets, categoryMap, spendingSummary as summaryData } from '@/lib/data';
+import { initialExpenses, initialBudgets, spendingSummary as summaryData } from '@/lib/data';
 import type { Expense, Budget } from '@/lib/definitions';
 import { SummaryCard } from '@/components/summary-card';
 import { AddExpense } from '@/components/add-expense';
@@ -12,7 +12,7 @@ import { SpendingSummary } from '@/components/spending-summary';
 
 export default function Dashboard() {
   const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenses);
-  const [budgets] = React.useState<Budget[]>(initialBudgets);
+  const [budgets, setBudgets] = React.useState<Budget[]>(initialBudgets);
 
   const handleAddExpense = React.useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
     const newExpense: Expense = {
@@ -21,6 +21,18 @@ export default function Dashboard() {
       date: new Date(),
     };
     setExpenses((prev) => [newExpense, ...prev]);
+  }, []);
+  
+  const handleSetBudget = React.useCallback((newBudgetData: Budget) => {
+    setBudgets((prev) => {
+      const existingBudgetIndex = prev.findIndex(b => b.categoryId === newBudgetData.categoryId);
+      if (existingBudgetIndex > -1) {
+        const updatedBudgets = [...prev];
+        updatedBudgets[existingBudgetIndex] = newBudgetData;
+        return updatedBudgets;
+      }
+      return [...prev, newBudgetData];
+    });
   }, []);
 
   const { totalSpending, totalBudget } = React.useMemo(() => {
@@ -66,7 +78,7 @@ export default function Dashboard() {
         </div>
         <div className="flex flex-col gap-8 lg:col-span-2">
             <SpendingSummary title={summaryData.title} analysis={summaryData.analysis} />
-            <BudgetOverview expenses={expenses} budgets={budgets} />
+            <BudgetOverview expenses={expenses} budgets={budgets} onSetBudget={handleSetBudget} />
         </div>
       </div>
     </div>

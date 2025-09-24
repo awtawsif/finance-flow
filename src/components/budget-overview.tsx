@@ -5,13 +5,15 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import type { Expense, Budget } from '@/lib/definitions';
 import { categoryMap } from '@/lib/data';
+import { SetBudget } from '@/components/set-budget';
 
 interface BudgetOverviewProps {
   expenses: Expense[];
   budgets: Budget[];
+  onSetBudget: (budget: Budget) => void;
 }
 
-export function BudgetOverview({ expenses, budgets }: BudgetOverviewProps) {
+export function BudgetOverview({ expenses, budgets, onSetBudget }: BudgetOverviewProps) {
   const budgetData = React.useMemo(() => {
     return budgets.map((budget) => {
       const category = categoryMap.get(budget.categoryId);
@@ -21,7 +23,7 @@ export function BudgetOverview({ expenses, budgets }: BudgetOverviewProps) {
         .filter((exp) => exp.categoryId === budget.categoryId)
         .reduce((sum, exp) => sum + exp.amount, 0);
 
-      const progress = (spent / budget.limit) * 100;
+      const progress = budget.limit > 0 ? (spent / budget.limit) * 100 : 0;
 
       return {
         ...category,
@@ -30,14 +32,17 @@ export function BudgetOverview({ expenses, budgets }: BudgetOverviewProps) {
         progress: Math.min(progress, 100), // Cap progress at 100%
         overBudget: progress > 100
       };
-    }).filter(Boolean);
+    }).filter((item): item is NonNullable<typeof item> => item !== null);
   }, [expenses, budgets]);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Budget Overview</CardTitle>
-        <CardDescription>Your spending progress against monthly budgets.</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <div className="grid gap-1.5">
+          <CardTitle>Budget Overview</CardTitle>
+          <CardDescription>Your spending progress against monthly budgets.</CardDescription>
+        </div>
+        <SetBudget budgets={budgets} onSetBudget={onSetBudget} />
       </CardHeader>
       <CardContent className="space-y-6">
         {budgetData.length > 0 ? budgetData.map((item) => (
@@ -53,7 +58,7 @@ export function BudgetOverview({ expenses, budgets }: BudgetOverviewProps) {
             </div>
             <Progress value={item.progress} />
           </div>
-        )) : <p className="text-sm text-muted-foreground">No budgets set for this month.</p>}
+        )) : <p className="text-sm text-muted-foreground">No budgets set for this month. Click 'Set Budget' to start.</p>}
       </CardContent>
     </Card>
   );
