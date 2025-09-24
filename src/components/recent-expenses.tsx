@@ -67,8 +67,8 @@ export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteE
               <TableHead>Description</TableHead>
               <TableHead>Category</TableHead>
               <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="hidden sm:table-cell">Date</TableHead>
-              <TableHead><span className="sr-only">Actions</span></TableHead>
+              <TableHead className="hidden pr-0 sm:table-cell">Date</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -86,7 +86,7 @@ export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteE
                     )}
                   </TableCell>
                   <TableCell className="text-right font-mono">${expense.amount.toFixed(2)}</TableCell>
-                  <TableCell className="hidden sm:table-cell"><FormattedDate date={expense.date} /></TableCell>
+                  <TableCell className="hidden pr-0 sm:table-cell"><FormattedDate date={expense.date} /></TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditExpense(expense)}>
