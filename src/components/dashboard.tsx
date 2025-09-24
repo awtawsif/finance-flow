@@ -12,13 +12,62 @@ import { Shapes } from 'lucide-react';
 import { SetOverallBudget } from '@/components/set-overall-budget';
 import { EditExpense } from '@/components/edit-expense';
 
+// Helper to get data from localStorage
+function getFromLocalStorage<T>(key: string, defaultValue: T): T {
+  if (typeof window === 'undefined') {
+    return defaultValue;
+  }
+  const storedValue = localStorage.getItem(key);
+  if (storedValue) {
+    try {
+      return JSON.parse(storedValue, (k, v) => {
+        // Reviver function to convert date strings back to Date objects
+        if (k === 'date' && typeof v === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(v)) {
+          return new Date(v);
+        }
+        return v;
+      });
+    } catch (error) {
+      console.error(`Error parsing localStorage key "${key}":`, error);
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+}
+
 export default function Dashboard() {
-  const [expenses, setExpenses] = React.useState<Expense[]>([]);
-  const [categories, setCategories] = React.useState<Category[]>(initialCategories);
-  const [budgets, setBudgets] = React.useState<Record<string, number>>({});
-  const [overallBudget, setOverallBudget] = React.useState<number>(0);
-  const [categoryMap, setCategoryMap] = React.useState(() => new Map(initialCategories.map(cat => [cat.id, cat])));
+  const [expenses, setExpenses] = React.useState<Expense[]>(() => 
+    getFromLocalStorage<Expense[]>('expenses', [])
+  );
+  const [categories, setCategories] = React.useState<Category[]>(() =>
+    getFromLocalStorage<Category[]>('categories', initialCategories)
+  );
+  const [budgets, setBudgets] = React.useState<Record<string, number>>(() =>
+    getFromLocalStorage<Record<string, number>>('budgets', {})
+  );
+  const [overallBudget, setOverallBudget] = React.useState<number>(() =>
+    getFromLocalStorage<number>('overallBudget', 0)
+  );
+  
+  const [categoryMap, setCategoryMap] = React.useState(() => new Map(categories.map(cat => [cat.id, cat])));
   const [expenseToEdit, setExpenseToEdit] = React.useState<Expense | null>(null);
+  
+  // Persist state to localStorage whenever it changes
+  React.useEffect(() => {
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+  }, [expenses]);
+  
+  React.useEffect(() => {
+    localStorage.setItem('categories', JSON.stringify(categories));
+  }, [categories]);
+  
+  React.useEffect(() => {
+    localStorage.setItem('budgets', JSON.stringify(budgets));
+  }, [budgets]);
+  
+  React.useEffect(() => {
+    localStorage.setItem('overallBudget', JSON.stringify(overallBudget));
+  }, [overallBudget]);
 
   React.useEffect(() => {
     setCategoryMap(new Map(categories.map(cat => [cat.id, cat])));
