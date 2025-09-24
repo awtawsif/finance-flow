@@ -58,7 +58,7 @@ export function SetOverallBudget({ onSetBudget, currentBudget }: SetOverallBudge
     onSetBudget(values.limit);
     toast({
       title: 'Overall Budget Updated',
-      description: `Your monthly budget has been set to $${values.limit.toFixed(2)}.`,
+      description: `Your monthly budget has been set to Tk ${values.limit.toFixed(2)}.`,
     });
     setIsOpen(false);
   }
@@ -85,7 +85,7 @@ export function SetOverallBudget({ onSetBudget, currentBudget }: SetOverallBudge
               name="limit"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Budget Limit ($)</FormLabel>
+                  <FormLabel>Budget Limit (Tk)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="0.00" {...field} />
                   </FormControl>

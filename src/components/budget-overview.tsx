@@ -110,7 +110,7 @@ export function BudgetOverview({
       if (overallBudget > 0 && values.limit > unallocatedAmount) {
         toast({
           title: 'Allocation Error',
-          description: `You cannot allocate more than the remaining unallocated budget of $${unallocatedAmount.toFixed(2)}.`,
+          description: `You cannot allocate more than the remaining unallocated budget of Tk ${unallocatedAmount.toFixed(2)}.`,
           variant: 'destructive',
         });
         return;
@@ -118,7 +118,7 @@ export function BudgetOverview({
       onSetBudget(selectedCategory.id, values.limit);
       toast({
         title: 'Budget Updated',
-        description: `Budget for "${selectedCategory.name}" has been set to $${values.limit.toFixed(2)}.`,
+        description: `Budget for "${selectedCategory.name}" has been set to Tk ${values.limit.toFixed(2)}.`,
       });
       setIsDialogOpen(false);
       setSelectedCategory(null);
@@ -160,7 +160,7 @@ export function BudgetOverview({
                   <div className="flex justify-between">
                     <p className="font-medium">{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
-                      <span>${spent.toFixed(2)}</span> / ${budget.toFixed(2)}
+                      <span>Tk {spent.toFixed(2)}</span> / Tk {budget.toFixed(2)}
                     </p>
                   </div>
                   {budget > 0 && <Progress value={progress} className={cn("h-2 mt-1", isOverBudget && "[&>div]:bg-destructive")} />}
@@ -215,7 +215,7 @@ export function BudgetOverview({
                 name="limit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Budget Limit ($)</FormLabel>
+                    <FormLabel>Budget Limit (Tk)</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="0.00" {...field} />
                     </FormControl>
@@ -225,7 +225,7 @@ export function BudgetOverview({
               />
               {overallBudget > 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Remaining to allocate: <strong>${unallocatedAmount.toFixed(2)}</strong>
+                  Remaining to allocate: <strong>Tk {unallocatedAmount.toFixed(2)}</strong>
                 </p>
               )}
                <DialogFooter className="pt-4">

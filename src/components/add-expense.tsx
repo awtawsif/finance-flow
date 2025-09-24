@@ -56,7 +56,7 @@ export function AddExpense({ onAddExpense, categories }: AddExpenseProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: '',
-      amount: '',
+      amount: '' as any,
       categoryId: '',
     },
   });
@@ -106,7 +106,7 @@ export function AddExpense({ onAddExpense, categories }: AddExpenseProps) {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount ($)</FormLabel>
+                  <FormLabel>Amount (Tk)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="0.00" {...field} />
                   </FormControl>

@@ -187,17 +187,17 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <SummaryCard 
             title="Total Spending (This Month)" 
-            value={`$${totalSpending.toFixed(2)}`}
+            value={`Tk ${totalSpending.toFixed(2)}`}
             description="Your total expenditure for the current month." 
           />
           <SummaryCard 
             title="Total Budget (This Month)" 
-            value={`$${totalBudget.toFixed(2)}`}
+            value={`Tk ${totalBudget.toFixed(2)}`}
             description={overallBudget > 0 ? 'Your total allocated budget for the month.' : 'Sum of all category budgets.'}
           />
           <SummaryCard 
             title="Remaining Budget" 
-            value={`$${remainingBudget.toFixed(2)}`}
+            value={`Tk ${remainingBudget.toFixed(2)}`}
             description={remainingBudget >= 0 ? "You are within budget." : "You are over budget."}
             isPositive={remainingBudget >= 0}
           />
