@@ -93,6 +93,14 @@ export function BudgetOverview({
 
 
   function handleDialogTrigger(category: Category) {
+    if (overallBudget <= 0) {
+      toast({
+        title: 'Set Overall Budget First',
+        description: 'Please set an overall monthly budget before allocating to categories.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setSelectedCategory(category);
     setIsDialogOpen(true);
   }
