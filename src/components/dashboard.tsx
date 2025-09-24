@@ -10,6 +10,7 @@ import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
 import { Shapes } from 'lucide-react';
 import { SetOverallBudget } from '@/components/set-overall-budget';
+import { EditExpense } from '@/components/edit-expense';
 
 export default function Dashboard() {
   const [expenses, setExpenses] = React.useState<Expense[]>([]);
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [budgets, setBudgets] = React.useState<Record<string, number>>({});
   const [overallBudget, setOverallBudget] = React.useState<number>(0);
   const [categoryMap, setCategoryMap] = React.useState(() => new Map(initialCategories.map(cat => [cat.id, cat])));
+  const [expenseToEdit, setExpenseToEdit] = React.useState<Expense | null>(null);
 
   React.useEffect(() => {
     setCategoryMap(new Map(categories.map(cat => [cat.id, cat])));
@@ -29,6 +31,19 @@ export default function Dashboard() {
       date: new Date(),
     };
     setExpenses((prev) => [newExpense, ...prev]);
+  }, []);
+  
+  const handleUpdateExpense = React.useCallback((updatedExpense: Expense) => {
+    setExpenses((prev) => 
+      prev.map((expense) => 
+        expense.id === updatedExpense.id ? updatedExpense : expense
+      )
+    );
+    setExpenseToEdit(null);
+  }, []);
+
+  const handleDeleteExpense = React.useCallback((expenseId: string) => {
+    setExpenses((prev) => prev.filter((expense) => expense.id !== expenseId));
   }, []);
   
   const handleSetBudget = React.useCallback((categoryId: string, limit: number) => {
@@ -81,49 +96,65 @@ export default function Dashboard() {
   const remainingBudget = totalBudget - totalSpending;
   
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-          Welcome Back!
-        </h1>
-        <div className="flex gap-2">
-          <SetOverallBudget onSetBudget={handleSetOverallBudget} currentBudget={overallBudget} />
-          <AddCategory onAddCategory={handleAddCategory} />
-          <AddExpense onAddExpense={handleAddExpense} categories={categories} />
+    <>
+      <div className="flex flex-col gap-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            Welcome Back!
+          </h1>
+          <div className="flex gap-2">
+            <SetOverallBudget onSetBudget={handleSetOverallBudget} currentBudget={overallBudget} />
+            <AddCategory onAddCategory={handleAddCategory} />
+            <AddExpense onAddExpense={handleAddExpense} categories={categories} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <SummaryCard 
+            title="Total Spending (This Month)" 
+            value={`$${totalSpending.toFixed(2)}`}
+            description="Your total expenditure for the current month." 
+          />
+          <SummaryCard 
+            title="Total Budget (This Month)" 
+            value={`$${totalBudget.toFixed(2)}`}
+            description={overallBudget > 0 ? 'Your total allocated budget for the month.' : 'Sum of all category budgets.'}
+          />
+          <SummaryCard 
+            title="Remaining Budget" 
+            value={`$${remainingBudget.toFixed(2)}`}
+            description={remainingBudget >= 0 ? "You are within budget." : "You are over budget."}
+            isPositive={remainingBudget >= 0}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <BudgetOverview 
+            categories={categories} 
+            budgets={budgets}
+            spending={spendingByCategory}
+            onSetBudget={handleSetBudget} 
+            onDeleteCategory={handleDeleteCategory}
+            overallBudget={overallBudget}
+            totalAllocated={totalAllocatedBudget}
+          />
+          <RecentExpenses 
+            expenses={expenses} 
+            categoryMap={categoryMap}
+            onEditExpense={setExpenseToEdit}
+            onDeleteExpense={handleDeleteExpense}
+          />
         </div>
       </div>
-
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <SummaryCard 
-          title="Total Spending (This Month)" 
-          value={`$${totalSpending.toFixed(2)}`}
-          description="Your total expenditure for the current month." 
+      
+      {expenseToEdit && (
+        <EditExpense
+          expense={expenseToEdit}
+          categories={categories}
+          onUpdateExpense={handleUpdateExpense}
+          onClose={() => setExpenseToEdit(null)}
         />
-        <SummaryCard 
-          title="Total Budget (This Month)" 
-          value={`$${totalBudget.toFixed(2)}`}
-          description={overallBudget > 0 ? 'Your total allocated budget for the month.' : 'Sum of all category budgets.'}
-        />
-        <SummaryCard 
-          title="Remaining Budget" 
-          value={`$${remainingBudget.toFixed(2)}`}
-          description={remainingBudget >= 0 ? "You are within budget." : "You are over budget."}
-          isPositive={remainingBudget >= 0}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <BudgetOverview 
-          categories={categories} 
-          budgets={budgets}
-          spending={spendingByCategory}
-          onSetBudget={handleSetBudget} 
-          onDeleteCategory={handleDeleteCategory}
-          overallBudget={overallBudget}
-          totalAllocated={totalAllocatedBudget}
-        />
-        <RecentExpenses expenses={expenses} categoryMap={categoryMap} />
-      </div>
-    </div>
+      )}
+    </>
   );
 }
