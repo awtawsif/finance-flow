@@ -60,6 +60,12 @@ export default function Dashboard() {
     setExpenses((prev) => prev.filter((e) => e.categoryId !== categoryId));
   }, []);
 
+  const spendingByCategory = React.useMemo(() => {
+    return expenses.reduce((acc, expense) => {
+      acc[expense.categoryId] = (acc[expense.categoryId] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [expenses]);
 
   const { totalSpending, totalBudget } = React.useMemo(() => {
     const totalSpending = expenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -104,7 +110,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <BudgetOverview 
           categories={categories} 
-          budgets={budgets} 
+          budgets={budgets}
+          spending={spendingByCategory}
           onSetBudget={handleSetBudget} 
           onDeleteCategory={handleDeleteCategory}
         />

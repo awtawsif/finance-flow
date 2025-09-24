@@ -51,6 +51,7 @@ import { cn } from '@/lib/utils';
 interface BudgetOverviewProps {
   categories: Category[];
   budgets: Record<string, number>;
+  spending: Record<string, number>;
   onSetBudget: (categoryId: string, limit: number) => void;
   onDeleteCategory: (categoryId: string) => void;
 }
@@ -60,7 +61,7 @@ const formSchema = z.object({
 });
 type SetBudgetFormValues = z.infer<typeof formSchema>;
 
-export function BudgetOverview({ categories, budgets, onSetBudget, onDeleteCategory }: BudgetOverviewProps) {
+export function BudgetOverview({ categories, budgets, spending, onSetBudget, onDeleteCategory }: BudgetOverviewProps) {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [selectedCategory, setSelectedCategory] = React.useState<Category | null>(null);
@@ -113,7 +114,12 @@ export function BudgetOverview({ categories, budgets, onSetBudget, onDeleteCateg
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {categories.map((category) => (
+            {categories.map((category) => {
+              const spent = spending[category.id] || 0;
+              const budget = budgets[category.id] || 0;
+              const progress = budget > 0 ? (spent / budget) * 100 : 0;
+
+              return (
               <div key={category.id} className="group flex items-center gap-4">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${category.color}20` }}>
                   <category.icon className="h-6 w-6" style={{ color: category.color }}/>
@@ -122,9 +128,10 @@ export function BudgetOverview({ categories, budgets, onSetBudget, onDeleteCateg
                   <div className="flex justify-between">
                     <p className="font-medium">{category.name}</p>
                     <p className="text-sm text-muted-foreground">
-                       ${(budgets[category.id] || 0).toFixed(2)}
+                      <span className={cn(spent > budget && budget > 0 && "text-destructive font-semibold")}>${spent.toFixed(2)}</span> / ${budget.toFixed(2)}
                     </p>
                   </div>
+                  {budget > 0 && <Progress value={progress} className="h-2 mt-1" />}
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDialogTrigger(category)}>
@@ -156,7 +163,7 @@ export function BudgetOverview({ categories, budgets, onSetBudget, onDeleteCateg
                   </AlertDialog>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </CardContent>
       </Card>
