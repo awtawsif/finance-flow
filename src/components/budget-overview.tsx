@@ -19,7 +19,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
@@ -54,6 +53,8 @@ interface BudgetOverviewProps {
   spending: Record<string, number>;
   onSetBudget: (categoryId: string, limit: number) => void;
   onDeleteCategory: (categoryId: string) => void;
+  overallBudget: number;
+  totalAllocated: number;
 }
 
 const formSchema = z.object({
@@ -61,7 +62,15 @@ const formSchema = z.object({
 });
 type SetBudgetFormValues = z.infer<typeof formSchema>;
 
-export function BudgetOverview({ categories, budgets, spending, onSetBudget, onDeleteCategory }: BudgetOverviewProps) {
+export function BudgetOverview({ 
+  categories, 
+  budgets, 
+  spending, 
+  onSetBudget, 
+  onDeleteCategory,
+  overallBudget,
+  totalAllocated
+}: BudgetOverviewProps) {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [selectedCategory, setSelectedCategory] = React.useState<Category | null>(null);
@@ -76,6 +85,12 @@ export function BudgetOverview({ categories, budgets, spending, onSetBudget, onD
     }
   }, [selectedCategory, budgets, form]);
 
+  const unallocatedAmount = React.useMemo(() => {
+    if (overallBudget <= 0) return 0;
+    const currentCategoryBudget = selectedCategory ? (budgets[selectedCategory.id] || 0) : 0;
+    return overallBudget - totalAllocated + currentCategoryBudget;
+  }, [overallBudget, totalAllocated, selectedCategory, budgets]);
+
 
   function handleDialogTrigger(category: Category) {
     setSelectedCategory(category);
@@ -84,6 +99,14 @@ export function BudgetOverview({ categories, budgets, spending, onSetBudget, onD
 
   function onSubmit(values: SetBudgetFormValues) {
     if (selectedCategory) {
+      if (overallBudget > 0 && values.limit > unallocatedAmount) {
+        toast({
+          title: 'Allocation Error',
+          description: `You cannot allocate more than the remaining unallocated budget of $${unallocatedAmount.toFixed(2)}.`,
+          variant: 'destructive',
+        });
+        return;
+      }
       onSetBudget(selectedCategory.id, values.limit);
       toast({
         title: 'Budget Updated',
@@ -107,9 +130,9 @@ export function BudgetOverview({ categories, budgets, spending, onSetBudget, onD
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Budget Overview</CardTitle>
+          <CardTitle>Category Budgets</CardTitle>
           <CardDescription>
-            Manage your spending limits for each category.
+            Allocate your overall budget across different categories.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -173,7 +196,7 @@ export function BudgetOverview({ categories, budgets, spending, onSetBudget, onD
           <DialogHeader>
             <DialogTitle>Set Budget for {selectedCategory?.name}</DialogTitle>
             <DialogDescription>
-              Enter the monthly budget limit for this category.
+               Enter the monthly budget limit for this category.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -191,6 +214,11 @@ export function BudgetOverview({ categories, budgets, spending, onSetBudget, onD
                   </FormItem>
                 )}
               />
+              {overallBudget > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Remaining to allocate: <strong>${unallocatedAmount.toFixed(2)}</strong>
+                </p>
+              )}
                <DialogFooter className="pt-4">
                 <DialogClose asChild>
                   <Button type="button" variant="secondary" onClick={() => setSelectedCategory(null)}>

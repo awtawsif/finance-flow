@@ -67,11 +67,16 @@ export default function Dashboard() {
     }, {} as Record<string, number>);
   }, [expenses]);
 
+  const totalAllocatedBudget = React.useMemo(() => {
+    return Object.values(budgets).reduce((sum, limit) => sum + limit, 0);
+  }, [budgets]);
+  
   const { totalSpending, totalBudget } = React.useMemo(() => {
     const totalSpending = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const categoryBudgetsTotal = Object.values(budgets).reduce((sum, limit) => sum + limit, 0);
-    return { totalSpending, totalBudget: overallBudget > 0 ? overallBudget : categoryBudgetsTotal };
-  }, [expenses, budgets, overallBudget]);
+    // If overall budget is set, it's the source of truth. Otherwise, sum category budgets.
+    const budget = overallBudget > 0 ? overallBudget : totalAllocatedBudget;
+    return { totalSpending, totalBudget: budget };
+  }, [expenses, budgets, overallBudget, totalAllocatedBudget]);
 
   const remainingBudget = totalBudget - totalSpending;
   
@@ -97,7 +102,7 @@ export default function Dashboard() {
         <SummaryCard 
           title="Total Budget (This Month)" 
           value={`$${totalBudget.toFixed(2)}`}
-          description="Your total allocated budget for the month."
+          description={overallBudget > 0 ? 'Your total allocated budget for the month.' : 'Sum of all category budgets.'}
         />
         <SummaryCard 
           title="Remaining Budget" 
@@ -114,6 +119,8 @@ export default function Dashboard() {
           spending={spendingByCategory}
           onSetBudget={handleSetBudget} 
           onDeleteCategory={handleDeleteCategory}
+          overallBudget={overallBudget}
+          totalAllocated={totalAllocatedBudget}
         />
         <RecentExpenses expenses={expenses} categoryMap={categoryMap} />
       </div>
