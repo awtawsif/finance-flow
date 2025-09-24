@@ -5,7 +5,6 @@ import { initialExpenses, initialBudgets, spendingSummary as summaryData } from 
 import type { Expense, Budget } from '@/lib/definitions';
 import { SummaryCard } from '@/components/summary-card';
 import { AddExpense } from '@/components/add-expense';
-import { SpendingChart } from '@/components/spending-chart';
 import { BudgetOverview } from '@/components/budget-overview';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { SpendingSummary } from '@/components/spending-summary';
@@ -73,8 +72,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
         <div className="flex flex-col gap-8 lg:col-span-3">
-            <SpendingChart expenses={expenses} />
-            <RecentExpenses expenses={expenses.slice(0, 5)} />
+            <RecentExpenses expenses={expenses} />
         </div>
         <div className="flex flex-col gap-8 lg:col-span-2">
             <SpendingSummary title={summaryData.title} analysis={summaryData.analysis} />
