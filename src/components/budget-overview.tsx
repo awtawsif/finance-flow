@@ -148,7 +148,8 @@ export function BudgetOverview({
             {categories.map((category) => {
               const spent = spending[category.id] || 0;
               const budget = budgets[category.id] || 0;
-              const progress = budget > 0 ? (spent / budget) * 100 : 0;
+              const isOverBudget = budget > 0 && spent > budget;
+              const progress = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
 
               return (
               <div key={category.id} className="group flex items-center gap-4">
@@ -158,11 +159,11 @@ export function BudgetOverview({
                 <div className="flex-1">
                   <div className="flex justify-between">
                     <p className="font-medium">{category.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      <span className={cn(spent > budget && budget > 0 && "text-destructive font-semibold")}>${spent.toFixed(2)}</span> / ${budget.toFixed(2)}
+                    <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
+                      <span>${spent.toFixed(2)}</span> / ${budget.toFixed(2)}
                     </p>
                   </div>
-                  {budget > 0 && <Progress value={progress} className="h-2 mt-1" />}
+                  {budget > 0 && <Progress value={progress} className={cn("h-2 mt-1", isOverBudget && "[&>div]:bg-destructive")} />}
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDialogTrigger(category)}>
