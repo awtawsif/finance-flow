@@ -35,12 +35,29 @@ function getFromLocalStorage<T>(key: string, defaultValue: T): T {
   return defaultValue;
 }
 
+// Helper to restore icon functions to categories loaded from localStorage
+function restoreCategoryIcons(storedCategories: Category[]): Category[] {
+  const initialCategoryMap = new Map(initialCategories.map(cat => [cat.id, cat.icon]));
+  return storedCategories.map(cat => {
+    // If the icon is missing or not a function, restore it.
+    // New categories will default to Shapes icon.
+    // Existing initial categories will get their original icon back.
+    if (!cat.icon) {
+      return {
+        ...cat,
+        icon: initialCategoryMap.get(cat.id) || Shapes,
+      };
+    }
+    return cat;
+  });
+}
+
 export default function Dashboard() {
   const [expenses, setExpenses] = React.useState<Expense[]>(() => 
     getFromLocalStorage<Expense[]>('expenses', [])
   );
   const [categories, setCategories] = React.useState<Category[]>(() =>
-    getFromLocalStorage<Category[]>('categories', initialCategories)
+    restoreCategoryIcons(getFromLocalStorage<Category[]>('categories', initialCategories))
   );
   const [budgets, setBudgets] = React.useState<Record<string, number>>(() =>
     getFromLocalStorage<Record<string, number>>('budgets', {})
@@ -58,7 +75,9 @@ export default function Dashboard() {
   }, [expenses]);
   
   React.useEffect(() => {
-    localStorage.setItem('categories', JSON.stringify(categories));
+    // We create a version of categories for serialization that omits the icon
+    const serializableCategories = categories.map(({ icon, ...rest }) => rest);
+    localStorage.setItem('categories', JSON.stringify(serializableCategories));
   }, [categories]);
   
   React.useEffect(() => {
