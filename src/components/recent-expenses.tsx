@@ -1,3 +1,6 @@
+'use client';
+
+import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +10,16 @@ import { format } from 'date-fns';
 
 interface RecentExpensesProps {
   expenses: Expense[];
+}
+
+function FormattedDate({ date }: { date: Date }) {
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  return isClient ? format(new Date(date), 'MMM d, yyyy') : null;
 }
 
 export function RecentExpenses({ expenses }: RecentExpensesProps) {
@@ -41,7 +54,7 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
                     )}
                   </TableCell>
                   <TableCell className="text-right font-mono">${expense.amount.toFixed(2)}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{format(expense.date, 'MMM d, yyyy')}</TableCell>
+                  <TableCell className="hidden sm:table-cell"><FormattedDate date={expense.date} /></TableCell>
                 </TableRow>
               );
             })}
