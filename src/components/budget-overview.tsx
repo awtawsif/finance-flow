@@ -1,0 +1,201 @@
+'use client';
+
+import * as React from 'react';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { Pencil, Trash2 } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import type { Category } from '@/lib/definitions';
+import { cn } from '@/lib/utils';
+
+interface BudgetOverviewProps {
+  categories: Category[];
+  budgets: Record<string, number>;
+  onSetBudget: (categoryId: string, limit: number) => void;
+  onDeleteCategory: (categoryId: string) => void;
+}
+
+const formSchema = z.object({
+  limit: z.coerce.number().positive({ message: 'Budget must be a positive number.' }),
+});
+type SetBudgetFormValues = z.infer<typeof formSchema>;
+
+export function BudgetOverview({ categories, budgets, onSetBudget, onDeleteCategory }: BudgetOverviewProps) {
+  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [selectedCategory, setSelectedCategory] = React.useState<Category | null>(null);
+
+  const form = useForm<SetBudgetFormValues>({
+    resolver: zodResolver(formSchema),
+  });
+  
+  React.useEffect(() => {
+    if (selectedCategory) {
+      form.reset({ limit: budgets[selectedCategory.id] || '' as any });
+    }
+  }, [selectedCategory, budgets, form]);
+
+
+  function handleDialogTrigger(category: Category) {
+    setSelectedCategory(category);
+    setIsDialogOpen(true);
+  }
+
+  function onSubmit(values: SetBudgetFormValues) {
+    if (selectedCategory) {
+      onSetBudget(selectedCategory.id, values.limit);
+      toast({
+        title: 'Budget Updated',
+        description: `Budget for "${selectedCategory.name}" has been set to $${values.limit.toFixed(2)}.`,
+      });
+      setIsDialogOpen(false);
+      setSelectedCategory(null);
+    }
+  }
+  
+  function handleDelete(categoryId: string) {
+    onDeleteCategory(categoryId);
+    toast({
+      title: 'Category Deleted',
+      description: 'The category has been successfully deleted.',
+      variant: 'destructive',
+    });
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Budget Overview</CardTitle>
+          <CardDescription>
+            Manage your spending limits for each category.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {categories.map((category) => (
+              <div key={category.id} className="group flex items-center gap-4">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${category.color}20` }}>
+                  <category.icon className="h-6 w-6" style={{ color: category.color }}/>
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between">
+                    <p className="font-medium">{category.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                       ${(budgets[category.id] || 0).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDialogTrigger(category)}>
+                    <Pencil className="h-4 w-4" />
+                    <span className="sr-only">Edit Budget</span>
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete Category</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the 
+                          <strong> {category.name}</strong> category and all associated expenses and budgets.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(category.id)}>
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Set Budget for {selectedCategory?.name}</DialogTitle>
+            <DialogDescription>
+              Enter the monthly budget limit for this category.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+              <FormField
+                control={form.control}
+                name="limit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Budget Limit ($)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="0.00" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <DialogFooter className="pt-4">
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary" onClick={() => setSelectedCategory(null)}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button type="submit">Save Budget</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

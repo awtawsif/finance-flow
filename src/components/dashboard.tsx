@@ -6,6 +6,7 @@ import type { Expense, Category } from '@/lib/definitions';
 import { SummaryCard } from '@/components/summary-card';
 import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
+import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
 import { Shapes } from 'lucide-react';
 import { SetOverallBudget } from '@/components/set-overall-budget';
@@ -13,6 +14,7 @@ import { SetOverallBudget } from '@/components/set-overall-budget';
 export default function Dashboard() {
   const [expenses, setExpenses] = React.useState<Expense[]>([]);
   const [categories, setCategories] = React.useState<Category[]>(initialCategories);
+  const [budgets, setBudgets] = React.useState<Record<string, number>>({});
   const [overallBudget, setOverallBudget] = React.useState<number>(0);
   const [categoryMap, setCategoryMap] = React.useState(() => new Map(initialCategories.map(cat => [cat.id, cat])));
 
@@ -29,6 +31,10 @@ export default function Dashboard() {
     setExpenses((prev) => [newExpense, ...prev]);
   }, []);
   
+  const handleSetBudget = React.useCallback((categoryId: string, limit: number) => {
+    setBudgets((prev) => ({ ...prev, [categoryId]: limit }));
+  }, []);
+
   const handleSetOverallBudget = React.useCallback((newBudget: number) => {
     setOverallBudget(newBudget);
   }, []);
@@ -44,11 +50,22 @@ export default function Dashboard() {
     setCategories((prev) => [...prev, newCategory]);
   }, []);
 
+  const handleDeleteCategory = React.useCallback((categoryId: string) => {
+    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
+    setBudgets((prev) => {
+      const newBudgets = { ...prev };
+      delete newBudgets[categoryId];
+      return newBudgets;
+    });
+    setExpenses((prev) => prev.filter((e) => e.categoryId !== categoryId));
+  }, []);
+
 
   const { totalSpending, totalBudget } = React.useMemo(() => {
     const totalSpending = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    return { totalSpending, totalBudget: overallBudget };
-  }, [expenses, overallBudget]);
+    const categoryBudgetsTotal = Object.values(budgets).reduce((sum, limit) => sum + limit, 0);
+    return { totalSpending, totalBudget: overallBudget > 0 ? overallBudget : categoryBudgetsTotal };
+  }, [expenses, budgets, overallBudget]);
 
   const remainingBudget = totalBudget - totalSpending;
   
@@ -84,7 +101,13 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <BudgetOverview 
+          categories={categories} 
+          budgets={budgets} 
+          onSetBudget={handleSetBudget} 
+          onDeleteCategory={handleDeleteCategory}
+        />
         <RecentExpenses expenses={expenses} categoryMap={categoryMap} />
       </div>
     </div>
