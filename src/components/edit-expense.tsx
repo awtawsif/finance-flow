@@ -71,7 +71,7 @@ export function EditExpense({ expense, onUpdateExpense, onClose, categories }: E
 
   return (
     <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-full sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit Expense</DialogTitle>
           <DialogDescription>

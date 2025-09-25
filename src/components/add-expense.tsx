@@ -79,7 +79,7 @@ export function AddExpense({ onAddExpense, categories }: AddExpenseProps) {
           Add Expense
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-full sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add New Expense</DialogTitle>
           <DialogDescription>

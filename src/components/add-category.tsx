@@ -66,7 +66,7 @@ export function AddCategory({ onAddCategory }: AddCategoryProps) {
           Add Category
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-full sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add New Category</DialogTitle>
           <DialogDescription>

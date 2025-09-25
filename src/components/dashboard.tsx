@@ -173,11 +173,11 @@ export default function Dashboard() {
   return (
     <>
       <div className="flex flex-col gap-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col flex-wrap items-start justify-between gap-4 sm:flex-row sm:items-center">
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
             Welcome Back!
           </h1>
-          <div className="flex gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <SetOverallBudget onSetBudget={handleSetOverallBudget} currentBudget={overallBudget} />
             <AddCategory onAddCategory={handleAddCategory} />
             <AddExpense onAddExpense={handleAddExpense} categories={categories} />

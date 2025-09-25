@@ -71,7 +71,7 @@ export function SetOverallBudget({ onSetBudget, currentBudget }: SetOverallBudge
           Set Overall Budget
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-full sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Set Overall Budget</DialogTitle>
           <DialogDescription>

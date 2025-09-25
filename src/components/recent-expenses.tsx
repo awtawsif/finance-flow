@@ -65,9 +65,9 @@ export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteE
           <TableHeader>
             <TableRow>
               <TableHead>Description</TableHead>
-              <TableHead>Category</TableHead>
+              <TableHead className="hidden md:table-cell">Category</TableHead>
               <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="hidden pr-0 sm:table-cell">Date</TableHead>
+              <TableHead className="hidden pr-0 md:table-cell">Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -77,7 +77,7 @@ export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteE
               return (
                 <TableRow key={expense.id} className="group">
                   <TableCell className="font-medium">{expense.description}</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     {category && (
                       <Badge variant="outline" className="flex w-fit items-center gap-2">
                          <category.icon className="h-4 w-4" style={{ color: category.color }} />
@@ -86,9 +86,9 @@ export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteE
                     )}
                   </TableCell>
                   <TableCell className="text-right font-mono">{expense.amount.toFixed(2)}</TableCell>
-                  <TableCell className="hidden pr-0 sm:table-cell"><FormattedDate date={expense.date} /></TableCell>
+                  <TableCell className="hidden pr-0 md:table-cell"><FormattedDate date={expense.date} /></TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex justify-end gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditExpense(expense)}>
                         <Pencil className="h-4 w-4" />
                         <span className="sr-only">Edit Expense</span>
