@@ -8,9 +8,21 @@ import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
-import { Shapes } from 'lucide-react';
+import { Shapes, Upload, Download } from 'lucide-react';
 import { SetOverallBudget } from '@/components/set-overall-budget';
 import { EditExpense } from '@/components/edit-expense';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 // Helper to get data from localStorage
 function getFromLocalStorage<T>(key: string, defaultValue: T): T {
@@ -56,6 +68,11 @@ export default function Dashboard() {
   
   const [categoryMap, setCategoryMap] = React.useState(() => new Map(categories.map(cat => [cat.id, cat])));
   const [expenseToEdit, setExpenseToEdit] = React.useState<Expense | null>(null);
+  const [showImportConfirm, setShowImportConfirm] = React.useState(false);
+  const [importedData, setImportedData] = React.useState<any>(null);
+
+  const { toast } = useToast();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Load data from localStorage on initial client-side render
   React.useEffect(() => {
@@ -145,6 +162,85 @@ export default function Dashboard() {
     setExpenses((prev) => prev.filter((e) => e.categoryId !== categoryId));
   }, []);
 
+  const handleExportData = () => {
+    const dataToExport = {
+      expenses,
+      categories: categories.map(({ icon, ...rest }) => rest), // Don't export icons
+      budgets,
+      overallBudget,
+    };
+    const dataStr = JSON.stringify(dataToExport, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `financeflow-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Data Exported', description: 'Your data has been successfully downloaded.' });
+  };
+  
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text !== 'string') throw new Error("File is not valid text");
+        const parsedData = JSON.parse(text);
+
+        // Basic validation
+        if (parsedData.expenses && parsedData.categories && parsedData.budgets && parsedData.overallBudget !== undefined) {
+          setImportedData(parsedData);
+          setShowImportConfirm(true);
+        } else {
+          throw new Error("Invalid data structure in JSON file.");
+        }
+      } catch (error) {
+        console.error("Import error:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Import Failed',
+          description: error instanceof Error ? error.message : 'Could not read or parse the file.',
+        });
+      } finally {
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+  
+  const confirmImport = () => {
+    if (!importedData) return;
+
+    setExpenses(getFromLocalStorage<Expense[]>('expenses', importedData.expenses));
+    setCategories(restoreCategoryIcons(importedData.categories));
+    setBudgets(importedData.budgets);
+    setOverallBudget(importedData.overallBudget);
+
+    // Persist immediately
+    localStorage.setItem('expenses', JSON.stringify(importedData.expenses));
+    localStorage.setItem('categories', JSON.stringify(importedData.categories));
+    localStorage.setItem('budgets', JSON.stringify(importedData.budgets));
+    localStorage.setItem('overallBudget', JSON.stringify(importedData.overallBudget));
+    
+    toast({ title: 'Import Successful', description: 'Your data has been restored.' });
+    setShowImportConfirm(false);
+    setImportedData(null);
+  };
+
+
   const spendingByCategory = React.useMemo(() => {
     return expenses.reduce((acc, expense) => {
       acc[expense.categoryId] = (acc[expense.categoryId] || 0) + expense.amount;
@@ -178,13 +274,26 @@ export default function Dashboard() {
             Welcome Back!
           </h1>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <SetOverallBudget onSetBudget={handleSetOverallBudget} currentBudget={overallBudget} />
-            <AddCategory onAddCategory={handleAddCategory} />
+            <Button variant="outline" onClick={handleImportClick}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import Data
+            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".json"
+              onChange={handleFileChange}
+            />
+            <Button variant="outline" onClick={handleExportData}>
+              <Download className="mr-2 h-4 w-4" />
+              Export Data
+            </Button>
             <AddExpense onAddExpense={handleAddExpense} categories={categories} />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <SummaryCard 
             title="Total Spending (This Month)" 
             value={`Tk ${totalSpending.toFixed(2)}`}
@@ -201,6 +310,10 @@ export default function Dashboard() {
             description={remainingBudget >= 0 ? "You are within budget." : "You are over budget."}
             isPositive={remainingBudget >= 0}
           />
+           <div className="flex flex-col gap-2">
+            <SetOverallBudget onSetBudget={handleSetOverallBudget} currentBudget={overallBudget} />
+            <AddCategory onAddCategory={handleAddCategory} />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -230,6 +343,26 @@ export default function Dashboard() {
           onClose={() => setExpenseToEdit(null)}
         />
       )}
+      
+      <AlertDialog open={showImportConfirm} onOpenChange={setShowImportConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to import data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will overwrite all your current expenses, categories, and budgets. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowImportConfirm(false);
+              setImportedData(null);
+            }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmImport}>
+              Import
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
