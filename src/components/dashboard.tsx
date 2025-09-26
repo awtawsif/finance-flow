@@ -284,7 +284,7 @@ export default function Dashboard() {
           </h1>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <Button variant="outline" onClick={handleImportClick}>
-              <Upload className="mr-2 h-4 w-4" />
+              <Download className="mr-2 h-4 w-4" />
               Import Data
             </Button>
             <input
@@ -295,7 +295,7 @@ export default function Dashboard() {
               onChange={handleFileChange}
             />
             <Button variant="outline" onClick={handleExportData}>
-              <Download className="mr-2 h-4 w-4" />
+              <Upload className="mr-2 h-4 w-4" />
               Export Data
             </Button>
             <AddExpense onAddExpense={handleAddExpense} categories={categories} />
