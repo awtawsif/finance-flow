@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -224,7 +225,12 @@ export default function Dashboard() {
   const confirmImport = () => {
     if (!importedData) return;
   
-    const parsedExpenses = getFromLocalStorage<Expense[]>('expenses', importedData.expenses);
+    // This reviver is needed because JSON.parse in getFromLocalStorage won't run here
+    const parsedExpenses = importedData.expenses.map((exp: any) => ({
+        ...exp,
+        date: new Date(exp.date),
+    }));
+
     const restoredCategories = restoreCategoryIcons(importedData.categories);
   
     setExpenses(parsedExpenses);
