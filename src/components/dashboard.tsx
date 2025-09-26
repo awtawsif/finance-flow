@@ -9,7 +9,7 @@ import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
-import { Shapes, Upload, Download } from 'lucide-react';
+import { Shapes, Download, Upload } from 'lucide-react';
 import { SetOverallBudget } from '@/components/set-overall-budget';
 import { EditExpense } from '@/components/edit-expense';
 import { Button } from '@/components/ui/button';
