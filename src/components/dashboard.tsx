@@ -223,14 +223,17 @@ export default function Dashboard() {
   
   const confirmImport = () => {
     if (!importedData) return;
-
-    setExpenses(getFromLocalStorage<Expense[]>('expenses', importedData.expenses));
-    setCategories(restoreCategoryIcons(importedData.categories));
+  
+    const parsedExpenses = getFromLocalStorage<Expense[]>('expenses', importedData.expenses);
+    const restoredCategories = restoreCategoryIcons(importedData.categories);
+  
+    setExpenses(parsedExpenses);
+    setCategories(restoredCategories);
     setBudgets(importedData.budgets);
     setOverallBudget(importedData.overallBudget);
-
+  
     // Persist immediately
-    localStorage.setItem('expenses', JSON.stringify(importedData.expenses));
+    localStorage.setItem('expenses', JSON.stringify(parsedExpenses));
     localStorage.setItem('categories', JSON.stringify(importedData.categories));
     localStorage.setItem('budgets', JSON.stringify(importedData.budgets));
     localStorage.setItem('overallBudget', JSON.stringify(importedData.overallBudget));
