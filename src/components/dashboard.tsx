@@ -9,10 +9,17 @@ import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
-import { Shapes, Download, Upload } from 'lucide-react';
+import { Shapes, Download, Upload, MoreHorizontal } from 'lucide-react';
 import { SetOverallBudget } from '@/components/set-overall-budget';
 import { EditExpense } from '@/components/edit-expense';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -283,10 +290,30 @@ export default function Dashboard() {
             Welcome Back!
           </h1>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button variant="outline" onClick={handleImportClick}>
-              <Download className="mr-2 h-4 w-4" />
-              Import Data
-            </Button>
+             <AddExpense onAddExpense={handleAddExpense} categories={categories} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => document.getElementById('add-category-trigger')?.click()}>
+                  <Shapes className="mr-2 h-4 w-4" />
+                  Add Category
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={handleImportClick}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import Data
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleExportData}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Data
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <input
               type="file"
               ref={fileInputRef}
@@ -294,11 +321,6 @@ export default function Dashboard() {
               accept=".json"
               onChange={handleFileChange}
             />
-            <Button variant="outline" onClick={handleExportData}>
-              <Upload className="mr-2 h-4 w-4" />
-              Export Data
-            </Button>
-            <AddExpense onAddExpense={handleAddExpense} categories={categories} />
           </div>
         </div>
 
@@ -319,10 +341,7 @@ export default function Dashboard() {
             description={remainingBudget >= 0 ? "You are within budget." : "You are over budget."}
             isPositive={remainingBudget >= 0}
           />
-           <div className="flex flex-col gap-2">
-            <SetOverallBudget onSetBudget={handleSetOverallBudget} currentBudget={overallBudget} />
-            <AddCategory onAddCategory={handleAddCategory} />
-          </div>
+          <AddCategory onAddCategory={handleAddCategory} />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

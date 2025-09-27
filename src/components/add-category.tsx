@@ -61,7 +61,8 @@ export function AddCategory({ onAddCategory }: AddCategoryProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        {/* This button is hidden but can be triggered programmatically from the dropdown */}
+        <Button id="add-category-trigger" variant="outline" className="hidden">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Category
         </Button>

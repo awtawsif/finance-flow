@@ -4,7 +4,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Cog } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -46,12 +46,15 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import type { Category } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
+import { SetOverallBudget } from '@/components/set-overall-budget';
+
 
 interface BudgetOverviewProps {
   categories: Category[];
   budgets: Record<string, number>;
   spending: Record<string, number>;
   onSetBudget: (categoryId: string, limit: number) => void;
+  onSetOverallBudget: (limit: number) => void;
   onDeleteCategory: (categoryId: string) => void;
   overallBudget: number;
   totalAllocated: number;
@@ -67,6 +70,7 @@ export function BudgetOverview({
   budgets, 
   spending, 
   onSetBudget, 
+  onSetOverallBudget,
   onDeleteCategory,
   overallBudget,
   totalAllocated
@@ -137,12 +141,15 @@ export function BudgetOverview({
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>Category Budgets</CardTitle>
-          <CardDescription>
-            Allocate your overall budget across different categories.
-          </CardDescription>
-        </CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Category Budgets</CardTitle>
+              <CardDescription>
+                Allocate your overall budget across different categories.
+              </CardDescription>
+            </div>
+            <SetOverallBudget onSetBudget={onSetOverallBudget} currentBudget={overallBudget} />
+          </CardHeader>
         <CardContent>
           <div className="space-y-6">
             {categories.map((category) => {
