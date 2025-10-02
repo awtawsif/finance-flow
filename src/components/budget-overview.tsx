@@ -148,12 +148,12 @@ export function BudgetOverview({
                   <div className="flex justify-between">
                     <p className="font-medium">{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
-                      <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : 'No budget'}
+                      <span>Tk {spent.toFixed(2)}</span> / Tk {budget > 0 ? budget.toFixed(2) : '---'}
                     </p>
                   </div>
                   {budget > 0 && <Progress value={progress} className={cn("h-2 mt-1", isOverBudget && "[&>div]:bg-destructive")} />}
                 </div>
-                <div className="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="flex gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDialogTrigger(category)}>
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Edit Budget</span>

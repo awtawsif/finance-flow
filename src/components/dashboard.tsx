@@ -402,8 +402,7 @@ export default function Dashboard() {
             categories={categories} 
             budgets={budgets}
             spending={spendingByCategory}
-            onSetBudget={handleSetBudget} 
-            onSetOverallBudget={handleSetOverallBudget}
+            onSetBudget={handleSetBudget}
             onDeleteCategory={handleDeleteCategory}
             totalAllocated={totalAllocatedBudget}
             overallBudget={totalBudget}
