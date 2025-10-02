@@ -230,7 +230,7 @@ export default function Dashboard() {
         const parsedData = JSON.parse(text);
 
         // Basic validation
-        if (parsedData.expenses && parsedData.earnings && parsedData.categories && parsedData.budgets) {
+        if (parsedData.expenses && parsedData.categories && parsedData.budgets) {
           setImportedData(parsedData);
           setShowImportConfirm(true);
         } else {
@@ -255,21 +255,35 @@ export default function Dashboard() {
   
   const confirmImport = () => {
     if (!importedData) return;
+
+    // --- BACKWARD COMPATIBILITY LOGIC ---
+    let importedEarnings = [];
+    if (importedData.earnings) {
+      // New format: has earnings array
+      importedEarnings = importedData.earnings.map((earn: any) => ({
+        ...earn,
+        date: new Date(earn.date),
+      }));
+    } else if (importedData.overallBudget) {
+      // Old format: has overallBudget, convert it to a single earning
+      importedEarnings = [{
+        id: `earn-${Date.now()}`,
+        description: 'Imported Budget',
+        amount: importedData.overallBudget,
+        date: new Date(),
+      }];
+    }
   
     // This reviver is needed because JSON.parse in getFromLocalStorage won't run here
     const parsedExpenses = importedData.expenses.map((exp: any) => ({
         ...exp,
         date: new Date(exp.date),
     }));
-    const parsedEarnings = importedData.earnings.map((earn: any) => ({
-      ...earn,
-      date: new Date(earn.date),
-    }));
 
     const restoredCategories = restoreCategoryIcons(importedData.categories);
   
     setExpenses(parsedExpenses);
-    setEarnings(parsedEarnings);
+    setEarnings(importedEarnings);
     setCategories(restoredCategories);
     setBudgets(importedData.budgets);
   
