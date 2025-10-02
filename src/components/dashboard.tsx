@@ -9,7 +9,7 @@ import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
-import { Shapes, Download, Upload, MoreHorizontal } from 'lucide-react';
+import { Shapes, Download, Upload, MoreHorizontal, AlertTriangle } from 'lucide-react';
 import { SetOverallBudget } from '@/components/set-overall-budget';
 import { EditExpense } from '@/components/edit-expense';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -77,6 +78,7 @@ export default function Dashboard() {
   const [categoryMap, setCategoryMap] = React.useState(() => new Map(categories.map(cat => [cat.id, cat])));
   const [expenseToEdit, setExpenseToEdit] = React.useState<Expense | null>(null);
   const [showImportConfirm, setShowImportConfirm] = React.useState(false);
+  const [showNukeConfirm, setShowNukeConfirm] = React.useState(false);
   const [importedData, setImportedData] = React.useState<any>(null);
 
   const { toast } = useToast();
@@ -245,15 +247,30 @@ export default function Dashboard() {
     setBudgets(importedData.budgets);
     setOverallBudget(importedData.overallBudget);
   
-    // Persist immediately
-    localStorage.setItem('expenses', JSON.stringify(parsedExpenses));
-    localStorage.setItem('categories', JSON.stringify(importedData.categories));
-    localStorage.setItem('budgets', JSON.stringify(importedData.budgets));
-    localStorage.setItem('overallBudget', JSON.stringify(importedData.overallBudget));
-    
     toast({ title: 'Import Successful', description: 'Your data has been restored.' });
     setShowImportConfirm(false);
     setImportedData(null);
+  };
+  
+  const confirmNuke = () => {
+    // Clear state
+    setExpenses([]);
+    setCategories(initialCategories);
+    setBudgets({});
+    setOverallBudget(0);
+    
+    // Clear localStorage
+    localStorage.removeItem('expenses');
+    localStorage.removeItem('categories');
+    localStorage.removeItem('budgets');
+    localStorage.removeItem('overallBudget');
+
+    toast({
+      variant: 'destructive',
+      title: 'Data Cleared',
+      description: 'All your data has been permanently deleted.',
+    });
+    setShowNukeConfirm(false);
   };
 
 
@@ -299,19 +316,30 @@ export default function Dashboard() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => document.getElementById('add-category-trigger')?.click()}>
-                  <Shapes className="mr-2 h-4 w-4" />
-                  Add Category
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onSelect={() => document.getElementById('add-category-trigger')?.click()}>
+                    <Shapes className="mr-2 h-4 w-4" />
+                    Add Category
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={handleImportClick}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Import Data
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={handleExportData}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Data
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onSelect={handleImportClick}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import Data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={handleExportData}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export Data
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onSelect={() => setShowNukeConfirm(true)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                    <AlertTriangle className="mr-2 h-4 w-4" />
+                    Clear All Data
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
             <input
@@ -341,7 +369,11 @@ export default function Dashboard() {
             description={remainingBudget >= 0 ? "You are within budget." : "You are over budget."}
             isPositive={remainingBudget >= 0}
           />
-          <AddCategory onAddCategory={handleAddCategory} />
+           <SummaryCard
+            title="Total Allocated"
+            value={`Tk ${totalAllocatedBudget.toFixed(2)}`}
+            description={`${((totalAllocatedBudget / (overallBudget || 1)) * 100).toFixed(0)}% of total budget`}
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -353,6 +385,7 @@ export default function Dashboard() {
             onDeleteCategory={handleDeleteCategory}
             overallBudget={overallBudget}
             totalAllocated={totalAllocatedBudget}
+            onSetOverallBudget={handleSetOverallBudget}
           />
           <RecentExpenses 
             expenses={expenses} 
@@ -363,6 +396,8 @@ export default function Dashboard() {
         </div>
       </div>
       
+      <AddCategory onAddCategory={handleAddCategory} />
+
       {expenseToEdit && (
         <EditExpense
           expense={expenseToEdit}
@@ -387,6 +422,26 @@ export default function Dashboard() {
             }}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmImport}>
               Import
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showNukeConfirm} onOpenChange={setShowNukeConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete all of your data, including expenses, categories, and budgets.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmNuke}
+            >
+              Clear Data
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
