@@ -3,14 +3,13 @@
 
 import * as React from 'react';
 import { initialCategories } from '@/lib/data';
-import type { Expense, Category } from '@/lib/definitions';
+import type { Expense, Category, Earning } from '@/lib/definitions';
 import { SummaryCard } from '@/components/summary-card';
 import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
 import { Shapes, Download, Upload, MoreHorizontal, AlertTriangle } from 'lucide-react';
-import { SetOverallBudget } from '@/components/set-overall-budget';
 import { EditExpense } from '@/components/edit-expense';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,6 +31,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { AddEarning } from '@/components/add-earning';
+import { RecentEarnings } from '@/components/recent-earnings';
+import { EditEarning } from '@/components/edit-earning';
 
 // Helper to get data from localStorage
 function getFromLocalStorage<T>(key: string, defaultValue: T): T {
@@ -71,12 +73,13 @@ export default function Dashboard() {
   const [isClient, setIsClient] = React.useState(false);
 
   const [expenses, setExpenses] = React.useState<Expense[]>([]);
+  const [earnings, setEarnings] = React.useState<Earning[]>([]);
   const [categories, setCategories] = React.useState<Category[]>(initialCategories);
   const [budgets, setBudgets] = React.useState<Record<string, number>>({});
-  const [overallBudget, setOverallBudget] = React.useState<number>(0);
   
   const [categoryMap, setCategoryMap] = React.useState(() => new Map(categories.map(cat => [cat.id, cat])));
   const [expenseToEdit, setExpenseToEdit] = React.useState<Expense | null>(null);
+  const [earningToEdit, setEarningToEdit] = React.useState<Earning | null>(null);
   const [showImportConfirm, setShowImportConfirm] = React.useState(false);
   const [showNukeConfirm, setShowNukeConfirm] = React.useState(false);
   const [importedData, setImportedData] = React.useState<any>(null);
@@ -87,9 +90,9 @@ export default function Dashboard() {
   // Load data from localStorage on initial client-side render
   React.useEffect(() => {
     setExpenses(getFromLocalStorage<Expense[]>('expenses', []));
+    setEarnings(getFromLocalStorage<Earning[]>('earnings', []));
     setCategories(restoreCategoryIcons(getFromLocalStorage<Omit<Category, 'icon'>[]>('categories', initialCategories.map(({ icon, ...rest }) => rest))));
     setBudgets(getFromLocalStorage<Record<string, number>>('budgets', {}));
-    setOverallBudget(getFromLocalStorage<number>('overallBudget', 0));
     setIsClient(true);
   }, []);
 
@@ -99,6 +102,11 @@ export default function Dashboard() {
     if (!isClient) return;
     localStorage.setItem('expenses', JSON.stringify(expenses));
   }, [expenses, isClient]);
+
+  React.useEffect(() => {
+    if (!isClient) return;
+    localStorage.setItem('earnings', JSON.stringify(earnings));
+  }, [earnings, isClient]);
   
   React.useEffect(() => {
     if (!isClient) return;
@@ -112,10 +120,6 @@ export default function Dashboard() {
     localStorage.setItem('budgets', JSON.stringify(budgets));
   }, [budgets, isClient]);
   
-  React.useEffect(() => {
-    if (!isClient) return;
-    localStorage.setItem('overallBudget', JSON.stringify(overallBudget));
-  }, [overallBudget, isClient]);
 
   React.useEffect(() => {
     setCategoryMap(new Map(categories.map(cat => [cat.id, cat])));
@@ -142,13 +146,31 @@ export default function Dashboard() {
   const handleDeleteExpense = React.useCallback((expenseId: string) => {
     setExpenses((prev) => prev.filter((expense) => expense.id !== expenseId));
   }, []);
+
+  const handleAddEarning = React.useCallback((newEarningData: Omit<Earning, 'id' | 'date'>) => {
+    const newEarning: Earning = {
+      ...newEarningData,
+      id: `earn-${Date.now()}`,
+      date: new Date(),
+    };
+    setEarnings((prev) => [newEarning, ...prev]);
+  }, []);
+  
+  const handleUpdateEarning = React.useCallback((updatedEarning: Earning) => {
+    setEarnings((prev) => 
+      prev.map((earning) => 
+        earning.id === updatedEarning.id ? updatedEarning : earning
+      )
+    );
+    setEarningToEdit(null);
+  }, []);
+
+  const handleDeleteEarning = React.useCallback((earningId: string) => {
+    setEarnings((prev) => prev.filter((earning) => earning.id !== earningId));
+  }, []);
   
   const handleSetBudget = React.useCallback((categoryId: string, limit: number) => {
     setBudgets((prev) => ({ ...prev, [categoryId]: limit }));
-  }, []);
-
-  const handleSetOverallBudget = React.useCallback((newBudget: number) => {
-    setOverallBudget(newBudget);
   }, []);
 
   const handleAddCategory = React.useCallback((categoryName: string) => {
@@ -175,9 +197,9 @@ export default function Dashboard() {
   const handleExportData = () => {
     const dataToExport = {
       expenses,
+      earnings,
       categories: categories.map(({ icon, ...rest }) => rest), // Don't export icons
       budgets,
-      overallBudget,
     };
     const dataStr = JSON.stringify(dataToExport, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -208,7 +230,7 @@ export default function Dashboard() {
         const parsedData = JSON.parse(text);
 
         // Basic validation
-        if (parsedData.expenses && parsedData.categories && parsedData.budgets && parsedData.overallBudget !== undefined) {
+        if (parsedData.expenses && parsedData.earnings && parsedData.categories && parsedData.budgets) {
           setImportedData(parsedData);
           setShowImportConfirm(true);
         } else {
@@ -239,13 +261,17 @@ export default function Dashboard() {
         ...exp,
         date: new Date(exp.date),
     }));
+    const parsedEarnings = importedData.earnings.map((earn: any) => ({
+      ...earn,
+      date: new Date(earn.date),
+    }));
 
     const restoredCategories = restoreCategoryIcons(importedData.categories);
   
     setExpenses(parsedExpenses);
+    setEarnings(parsedEarnings);
     setCategories(restoredCategories);
     setBudgets(importedData.budgets);
-    setOverallBudget(importedData.overallBudget);
   
     toast({ title: 'Import Successful', description: 'Your data has been restored.' });
     setShowImportConfirm(false);
@@ -255,15 +281,15 @@ export default function Dashboard() {
   const confirmNuke = () => {
     // Clear state
     setExpenses([]);
+    setEarnings([]);
     setCategories(initialCategories);
     setBudgets({});
-    setOverallBudget(0);
     
     // Clear localStorage
     localStorage.removeItem('expenses');
+    localStorage.removeItem('earnings');
     localStorage.removeItem('categories');
     localStorage.removeItem('budgets');
-    localStorage.removeItem('overallBudget');
 
     toast({
       variant: 'destructive',
@@ -287,10 +313,9 @@ export default function Dashboard() {
   
   const { totalSpending, totalBudget } = React.useMemo(() => {
     const totalSpending = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    // If overall budget is set, it's the source of truth. Otherwise, sum category budgets.
-    const budget = overallBudget > 0 ? overallBudget : totalAllocatedBudget;
-    return { totalSpending, totalBudget: budget };
-  }, [expenses, budgets, overallBudget, totalAllocatedBudget]);
+    const totalEarnings = earnings.reduce((sum, earn) => sum + earn.amount, 0);
+    return { totalSpending, totalBudget: totalEarnings };
+  }, [expenses, earnings]);
 
   const remainingBudget = totalBudget - totalSpending;
 
@@ -307,6 +332,7 @@ export default function Dashboard() {
             Welcome Back!
           </h1>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+             <AddEarning onAddEarning={handleAddEarning} />
              <AddExpense onAddExpense={handleAddExpense} categories={categories} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -352,46 +378,45 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <SummaryCard 
-            title="Total Spending (This Month)" 
+            title="Total Budget (Earnings)" 
+            value={`Tk ${totalBudget.toFixed(2)}`}
+            description="Total income recorded for the month."
+          />
+          <SummaryCard 
+            title="Total Spending" 
             value={`Tk ${totalSpending.toFixed(2)}`}
             description="Your total expenditure for the current month." 
           />
           <SummaryCard 
-            title="Total Budget (This Month)" 
-            value={`Tk ${totalBudget.toFixed(2)}`}
-            description={overallBudget > 0 ? 'Your total allocated budget for the month.' : 'Sum of all category budgets.'}
-          />
-          <SummaryCard 
-            title="Remaining Budget" 
+            title="Remaining Cash" 
             value={`Tk ${remainingBudget.toFixed(2)}`}
-            description={remainingBudget >= 0 ? "You are within budget." : "You are over budget."}
+            description={remainingBudget >= 0 ? "You are in the green." : "You have spent more than you earned."}
             isPositive={remainingBudget >= 0}
-          />
-           <SummaryCard
-            title="Total Allocated"
-            value={`Tk ${totalAllocatedBudget.toFixed(2)}`}
-            description={`${((totalAllocatedBudget / (overallBudget || 1)) * 100).toFixed(0)}% of total budget`}
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           <BudgetOverview 
             categories={categories} 
             budgets={budgets}
             spending={spendingByCategory}
             onSetBudget={handleSetBudget} 
             onDeleteCategory={handleDeleteCategory}
-            overallBudget={overallBudget}
             totalAllocated={totalAllocatedBudget}
-            onSetOverallBudget={handleSetOverallBudget}
+            overallBudget={totalBudget}
           />
           <RecentExpenses 
             expenses={expenses} 
             categoryMap={categoryMap}
             onEditExpense={setExpenseToEdit}
             onDeleteExpense={handleDeleteExpense}
+          />
+          <RecentEarnings
+            earnings={earnings}
+            onEditEarning={setEarningToEdit}
+            onDeleteEarning={handleDeleteEarning}
           />
         </div>
       </div>
@@ -407,12 +432,20 @@ export default function Dashboard() {
         />
       )}
       
+      {earningToEdit && (
+        <EditEarning
+          earning={earningToEdit}
+          onUpdateEarning={handleUpdateEarning}
+          onClose={() => setEarningToEdit(null)}
+        />
+      )}
+      
       <AlertDialog open={showImportConfirm} onOpenChange={setShowImportConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to import data?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will overwrite all your current expenses, categories, and budgets. This action cannot be undone.
+              This will overwrite all your current expenses, earnings, categories, and budgets. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -432,7 +465,7 @@ export default function Dashboard() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete all of your data, including expenses, categories, and budgets.
+              This action cannot be undone. This will permanently delete all of your data, including expenses, earnings, categories, and budgets.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -15,7 +15,7 @@ export function SummaryCard({ title, value, description, isPositive }: SummaryCa
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{value}</div>
+        <div className="text-2xl font-bold lg:text-3xl">{value}</div>
         <p className={cn("text-xs text-muted-foreground", isPositive === false && "text-destructive")}>
           {description}
         </p>

@@ -5,7 +5,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Pencil, Trash2, Cog } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -47,7 +47,6 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import type { Category } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
-import { SetOverallBudget } from '@/components/set-overall-budget';
 
 
 interface BudgetOverviewProps {
@@ -55,7 +54,6 @@ interface BudgetOverviewProps {
   budgets: Record<string, number>;
   spending: Record<string, number>;
   onSetBudget: (categoryId: string, limit: number) => void;
-  onSetOverallBudget: (limit: number) => void;
   onDeleteCategory: (categoryId: string) => void;
   overallBudget: number;
   totalAllocated: number;
@@ -71,7 +69,6 @@ export function BudgetOverview({
   budgets, 
   spending, 
   onSetBudget, 
-  onSetOverallBudget,
   onDeleteCategory,
   overallBudget,
   totalAllocated
@@ -98,28 +95,12 @@ export function BudgetOverview({
 
 
   function handleDialogTrigger(category: Category) {
-    if (overallBudget <= 0) {
-      toast({
-        title: 'Set Overall Budget First',
-        description: 'Please set an overall monthly budget before allocating to categories.',
-        variant: 'destructive',
-      });
-      return;
-    }
     setSelectedCategory(category);
     setIsDialogOpen(true);
   }
 
   function onSubmit(values: SetBudgetFormValues) {
     if (selectedCategory) {
-      if (overallBudget > 0 && values.limit > unallocatedAmount) {
-        toast({
-          title: 'Allocation Error',
-          description: `You cannot allocate more than the remaining unallocated budget of Tk ${unallocatedAmount.toFixed(2)}.`,
-          variant: 'destructive',
-        });
-        return;
-      }
       onSetBudget(selectedCategory.id, values.limit);
       toast({
         title: 'Budget Updated',
@@ -146,10 +127,9 @@ export function BudgetOverview({
             <div>
               <CardTitle>Category Budgets</CardTitle>
               <CardDescription>
-                Allocate your overall budget across different categories.
+                Set spending goals for different expense categories.
               </CardDescription>
             </div>
-            <SetOverallBudget onSetBudget={onSetOverallBudget} currentBudget={overallBudget} />
           </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -168,12 +148,12 @@ export function BudgetOverview({
                   <div className="flex justify-between">
                     <p className="font-medium">{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
-                      <span>Tk {spent.toFixed(2)}</span> / Tk {budget > 0 ? budget.toFixed(2) : '---'}
+                      <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : 'No budget'}
                     </p>
                   </div>
                   {budget > 0 && <Progress value={progress} className={cn("h-2 mt-1", isOverBudget && "[&>div]:bg-destructive")} />}
                 </div>
-                <div className="flex gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                <div className="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDialogTrigger(category)}>
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Edit Budget</span>
@@ -231,11 +211,6 @@ export function BudgetOverview({
                   </FormItem>
                 )}
               />
-              {overallBudget > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Remaining to allocate: <strong>Tk {unallocatedAmount.toFixed(2)}</strong>
-                </p>
-              )}
                <DialogFooter className="pt-4">
                 <DialogClose asChild>
                   <Button type="button" variant="secondary" onClick={() => setSelectedCategory(null)}>

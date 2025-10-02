@@ -15,6 +15,13 @@ export type Expense = {
   date: Date;
 };
 
+export type Earning = {
+  id: string;
+  description: string;
+  amount: number;
+  date: Date;
+};
+
 export type Budget = {
   categoryId: string;
   limit: number;

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Cog } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,40 +26,38 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import type { Earning } from '@/lib/definitions';
 
 const formSchema = z.object({
-  limit: z.coerce.number().positive({ message: 'Budget must be a positive number.' }),
+  description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
+  amount: z.coerce.number().positive({ message: 'Amount must be a positive number.' }),
 });
 
-type SetBudgetFormValues = z.infer<typeof formSchema>;
+type AddEarningFormValues = z.infer<typeof formSchema>;
 
-interface SetOverallBudgetProps {
-  onSetBudget: (limit: number) => void;
-  currentBudget: number;
+interface AddEarningProps {
+  onAddEarning: (earning: Omit<Earning, 'id' | 'date'>) => void;
 }
 
-export function SetOverallBudget({ onSetBudget, currentBudget }: SetOverallBudgetProps) {
+export function AddEarning({ onAddEarning }: AddEarningProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
 
-  const form = useForm<SetBudgetFormValues>({
+  const form = useForm<AddEarningFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      limit: currentBudget || ('' as any),
+      description: '',
+      amount: '' as any,
     },
   });
-  
-  React.useEffect(() => {
-    form.reset({ limit: currentBudget || ('' as any) });
-  }, [currentBudget, form, isOpen]);
 
-
-  function onSubmit(values: SetBudgetFormValues) {
-    onSetBudget(values.limit);
+  function onSubmit(values: AddEarningFormValues) {
+    onAddEarning(values);
     toast({
-      title: 'Overall Budget Updated',
-      description: `Your monthly budget has been set to Tk ${values.limit.toFixed(2)}.`,
+      title: 'Earning Added',
+      description: `Successfully added "${values.description}".`,
     });
+    form.reset();
     setIsOpen(false);
   }
 
@@ -67,25 +65,38 @@ export function SetOverallBudget({ onSetBudget, currentBudget }: SetOverallBudge
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <Cog className="mr-2 h-4 w-4" />
-          Set Overall Budget
+          <DollarSign className="mr-2 h-4 w-4" />
+          Add Earning
         </Button>
       </DialogTrigger>
       <DialogContent className="w-full sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Set Overall Budget</DialogTitle>
+          <DialogTitle>Add New Earning</DialogTitle>
           <DialogDescription>
-            Set your total monthly budget.
+            Enter the details of your income. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField
               control={form.control}
-              name="limit"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Budget Limit (Tk)</FormLabel>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Monthly allowance" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount (Tk)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="0.00" {...field} />
                   </FormControl>
@@ -99,7 +110,7 @@ export function SetOverallBudget({ onSetBudget, currentBudget }: SetOverallBudge
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit">Save Budget</Button>
+              <Button type="submit">Save Earning</Button>
             </DialogFooter>
           </form>
         </Form>
