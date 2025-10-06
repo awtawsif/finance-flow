@@ -34,7 +34,7 @@ import { AddEarning } from '@/components/add-earning';
 import { RecentEarnings } from '@/components/recent-earnings';
 import { EditEarning } from '@/components/edit-earning';
 import { SpendingOverviewChart } from './spending-overview-chart';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, formatISO } from 'date-fns';
+import { format, formatISO, parseISO, compareAsc } from 'date-fns';
 
 // Helper to get data from localStorage
 function getFromLocalStorage<T>(key: string, defaultValue: T): T {
@@ -333,38 +333,29 @@ export default function Dashboard() {
   const chartData = React.useMemo(() => {
     if (expenses.length === 0) return [];
   
-    // Get the range of dates for the current month based on existing expenses
-    const now = new Date();
-    const firstDay = startOfMonth(now);
-    const lastDay = endOfMonth(now);
-    const daysInMonth = eachDayOfInterval({ start: firstDay, end: lastDay });
-  
     // Group expenses by date and category
     const dailyExpenses = expenses.reduce((acc, expense) => {
       const dateKey = formatISO(expense.date, { representation: 'date' });
       if (!acc[dateKey]) {
-        acc[dateKey] = {};
+        acc[dateKey] = { date: format(expense.date, 'd') };
+         categories.forEach(category => {
+          acc[dateKey][category.id] = 0;
+        });
       }
-      if (!acc[dateKey][expense.categoryId]) {
-        acc[dateKey][expense.categoryId] = 0;
-      }
-      acc[dateKey][expense.categoryId] += expense.amount;
+      acc[dateKey][expense.categoryId] = (acc[dateKey][expense.categoryId] || 0) + expense.amount;
       return acc;
-    }, {} as Record<string, Record<string, number>>);
+    }, {} as Record<string, { date: string, [key: string]: any }>);
   
     // Create the data structure for the chart
-    return daysInMonth.map(day => {
-      const dateKey = formatISO(day, { representation: 'date' });
-      const dayData: { [key: string]: string | number } = {
-        date: format(day, 'd'), // Format as "1", "2", etc.
-      };
-  
-      categories.forEach(category => {
-        dayData[category.id] = dailyExpenses[dateKey]?.[category.id] || 0;
-      });
-  
-      return dayData;
-    });
+    const dataPoints = Object.keys(dailyExpenses).map(dateKey => ({
+      ...dailyExpenses[dateKey],
+      dateKey: dateKey
+    }));
+
+    // Sort by date
+    dataPoints.sort((a, b) => compareAsc(parseISO(a.dateKey), parseISO(b.dateKey)));
+    
+    return dataPoints;
   }, [expenses, categories]);
 
   // Render a loading state or nothing until the component has mounted on the client
@@ -534,3 +525,5 @@ export default function Dashboard() {
     </>
   );
 }
+
+    
