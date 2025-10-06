@@ -4,7 +4,6 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,7 +11,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
@@ -26,54 +24,48 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import type { Category } from '@/lib/definitions';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Category name must be at least 2 characters.' }),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: 'Please enter a valid hex color.' }),
 });
 
-type AddCategoryFormValues = z.infer<typeof formSchema>;
+type EditCategoryFormValues = z.infer<typeof formSchema>;
 
-interface AddCategoryProps {
-  onAddCategory: (data: { name: string; color: string }) => void;
+interface EditCategoryProps {
+  category: Category;
+  onUpdateCategory: (category: Category) => void;
+  onClose: () => void;
 }
 
-export function AddCategory({ onAddCategory }: AddCategoryProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
+export function EditCategory({ category, onUpdateCategory, onClose }: EditCategoryProps) {
   const { toast } = useToast();
 
-  const form = useForm<AddCategoryFormValues>({
+  const form = useForm<EditCategoryFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      color: '#000000',
+      name: category.name,
+      color: category.color,
     },
   });
 
-  function onSubmit(values: AddCategoryFormValues) {
-    onAddCategory(values);
+  function onSubmit(values: EditCategoryFormValues) {
+    onUpdateCategory({ ...category, ...values });
     toast({
-      title: 'Category Added',
-      description: `Successfully added the "${values.name}" category.`,
+      title: 'Category Updated',
+      description: `Successfully updated "${values.name}".`,
     });
-    form.reset();
-    setIsOpen(false);
+    onClose();
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {/* This button is hidden but can be triggered programmatically from the dropdown */}
-        <Button id="add-category-trigger" variant="outline" className="hidden">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Category
-        </Button>
-      </DialogTrigger>
+    <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="w-full sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Category</DialogTitle>
+          <DialogTitle>Edit Category</DialogTitle>
           <DialogDescription>
-            Enter the name and choose a color for the new category.
+            Make changes to your category here. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -109,11 +101,11 @@ export function AddCategory({ onAddCategory }: AddCategoryProps) {
             />
              <DialogFooter className="pt-4">
               <DialogClose asChild>
-                <Button type="button" variant="secondary">
+                <Button type="button" variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit">Save Category</Button>
+              <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>
         </Form>

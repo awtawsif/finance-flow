@@ -35,6 +35,7 @@ import { RecentEarnings } from '@/components/recent-earnings';
 import { EditEarning } from '@/components/edit-earning';
 import { SpendingOverviewChart } from './spending-overview-chart';
 import { format, formatISO, parseISO, compareAsc } from 'date-fns';
+import { EditCategory } from './edit-category';
 
 // Helper to get data from localStorage
 function getFromLocalStorage<T>(key: string, defaultValue: T): T {
@@ -81,6 +82,7 @@ export default function Dashboard() {
   const [categoryMap, setCategoryMap] = React.useState(() => new Map(categories.map(cat => [cat.id, cat])));
   const [expenseToEdit, setExpenseToEdit] = React.useState<Expense | null>(null);
   const [earningToEdit, setEarningToEdit] = React.useState<Earning | null>(null);
+  const [categoryToEdit, setCategoryToEdit] = React.useState<Category | null>(null);
   const [showImportConfirm, setShowImportConfirm] = React.useState(false);
   const [showNukeConfirm, setShowNukeConfirm] = React.useState(false);
   const [importedData, setImportedData] = React.useState<any>(null);
@@ -174,15 +176,23 @@ export default function Dashboard() {
     setBudgets((prev) => ({ ...prev, [categoryId]: limit }));
   }, []);
 
-  const handleAddCategory = React.useCallback((categoryName: string) => {
+  const handleAddCategory = React.useCallback((categoryData: { name: string; color: string }) => {
     const newCategory: Category = {
       id: `cat-${Date.now()}`,
-      name: categoryName,
+      name: categoryData.name,
       icon: Shapes,
-      // Generate a random HSL color
-      color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+      color: categoryData.color,
     };
     setCategories((prev) => [...prev, newCategory]);
+  }, []);
+  
+  const handleUpdateCategory = React.useCallback((updatedCategory: Category) => {
+    setCategories((prev) => 
+      prev.map((category) => 
+        category.id === updatedCategory.id ? updatedCategory : category
+      )
+    );
+    setCategoryToEdit(null);
   }, []);
 
   const handleDeleteCategory = React.useCallback((categoryId: string) => {
@@ -337,7 +347,7 @@ export default function Dashboard() {
     const dailyExpenses = expenses.reduce((acc, expense) => {
       const dateKey = formatISO(expense.date, { representation: 'date' });
       if (!acc[dateKey]) {
-        acc[dateKey] = { date: format(expense.date, 'd') };
+        acc[dateKey] = { date: format(expense.date, 'd MMM') };
          categories.forEach(category => {
           acc[dateKey][category.id] = 0;
         });
@@ -355,7 +365,10 @@ export default function Dashboard() {
     // Sort by date
     dataPoints.sort((a, b) => compareAsc(parseISO(a.dateKey), parseISO(b.dateKey)));
     
-    return dataPoints;
+    // Only use dates with spending
+    return dataPoints.filter(dp => {
+      return categories.some(cat => dp[cat.id] > 0);
+    });
   }, [expenses, categories]);
 
   // Render a loading state or nothing until the component has mounted on the client
@@ -443,6 +456,7 @@ export default function Dashboard() {
             budgets={budgets}
             spending={spendingByCategory}
             onSetBudget={handleSetBudget}
+            onEditCategory={setCategoryToEdit}
             onDeleteCategory={handleDeleteCategory}
           />
           <div className="flex flex-col gap-6 xl:col-span-2">
@@ -480,6 +494,14 @@ export default function Dashboard() {
           earning={earningToEdit}
           onUpdateEarning={handleUpdateEarning}
           onClose={() => setEarningToEdit(null)}
+        />
+      )}
+
+      {categoryToEdit && (
+        <EditCategory
+          category={categoryToEdit}
+          onUpdateCategory={handleUpdateCategory}
+          onClose={() => setCategoryToEdit(null)}
         />
       )}
       
@@ -525,5 +547,3 @@ export default function Dashboard() {
     </>
   );
 }
-
-    

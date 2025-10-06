@@ -5,7 +5,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Settings } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -55,6 +55,7 @@ interface BudgetOverviewProps {
   budgets: Record<string, number>;
   spending: Record<string, number>;
   onSetBudget: (categoryId: string, limit: number) => void;
+  onEditCategory: (category: Category) => void;
   onDeleteCategory: (categoryId: string) => void;
 }
 
@@ -69,6 +70,7 @@ export function BudgetOverview({
   budgets, 
   spending, 
   onSetBudget, 
+  onEditCategory,
   onDeleteCategory,
 }: BudgetOverviewProps) {
   const { toast } = useToast();
@@ -147,10 +149,14 @@ export function BudgetOverview({
                   </div>
                   {budget > 0 && <Progress value={progress} className={cn("h-2 mt-1", isOverBudget && "[&>div]:bg-destructive")} />}
                 </div>
-                <div className="flex gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                <div className="flex gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDialogTrigger(category)}>
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Edit Budget</span>
+                  </Button>
+                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditCategory(category)}>
+                    <Settings className="h-4 w-4" />
+                    <span className="sr-only">Edit Category</span>
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
