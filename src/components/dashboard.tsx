@@ -453,21 +453,16 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-          <div className="grid gap-6 lg:col-span-3">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+          <div className="grid gap-6">
              <RecentExpenses
                 expenses={expenses}
                 categoryMap={categoryMap}
                 onEditExpense={setExpenseToEdit}
                 onDeleteExpense={handleDeleteExpense}
               />
-              <RecentEarnings
-                earnings={earnings}
-                onEditEarning={setEarningToEdit}
-                onDeleteEarning={handleDeleteEarning}
-              />
           </div>
-           <div className="grid gap-6 lg:col-span-2">
+           <div className="grid gap-6">
               <BudgetOverview 
                 categories={categories} 
                 originalCategories={categories}
@@ -476,6 +471,11 @@ export default function Dashboard() {
                 onSetBudget={handleSetBudget}
                 onEditCategory={setCategoryToEdit}
                 onDeleteCategory={handleDeleteCategory}
+              />
+               <RecentEarnings
+                earnings={earnings}
+                onEditEarning={setEarningToEdit}
+                onDeleteEarning={handleDeleteEarning}
               />
               <SpendingOverviewChart data={chartData} categories={categories} />
             </div>
