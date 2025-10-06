@@ -135,7 +135,7 @@ export function BudgetOverview({
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between">
-                    <p className="font-medium">{category.name}</p>
+                    <p className="w-28 truncate font-medium" title={category.name}>{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
                       <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : '---'}
                     </p>

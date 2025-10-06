@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -16,10 +17,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import type { Earning } from '@/lib/definitions';
-import { format, isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 
 interface RecentEarningsProps {
   earnings: Earning[];
@@ -61,29 +67,30 @@ export function RecentEarnings({ earnings, onEditEarning, onDeleteEarning }: Rec
         <CardDescription>Your latest income.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-        {sortedDates.map((date, index) => (
-            <div key={date}>
-              <div className="mb-2">
+        <Accordion type="multiple" defaultValue={sortedDates.slice(0, 2)}>
+          {sortedDates.map((date) => (
+            <AccordionItem value={date} key={date}>
+              <AccordionTrigger>
                 <h3 className="font-semibold text-sm text-muted-foreground">
                   {format(new Date(date), 'MMMM d, yyyy')}
                 </h3>
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right w-[80px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {groupedEarnings[date].map((earning) => (
+              </AccordionTrigger>
+              <AccordionContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right w-[80px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {groupedEarnings[date].map((earning) => (
                       <TableRow key={earning.id} className="group">
                         <TableCell className="font-medium">{earning.description}</TableCell>
                         <TableCell className="text-right font-mono">{earning.amount.toFixed(2)}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                          <div className="flex justify-end gap-2 md:opacity-100">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditEarning(earning)}>
                               <Pencil className="h-4 w-4" />
                               <span className="sr-only">Edit Earning</span>
@@ -115,12 +122,12 @@ export function RecentEarnings({ earnings, onEditEarning, onDeleteEarning }: Rec
                         </TableCell>
                       </TableRow>
                     ))}
-                </TableBody>
-              </Table>
-               {index < sortedDates.length - 1 && <Separator className="mt-4" />}
-            </div>
+                  </TableBody>
+                </Table>
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </div>
+        </Accordion>
       </CardContent>
     </Card>
   );
