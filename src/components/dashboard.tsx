@@ -161,9 +161,9 @@ export default function Dashboard() {
         setIsSummaryLoading(true);
         try {
           const summary = await summarizeSpending({ 
-            expenses, 
+            expenses: expenses.map(e => ({...e, date: e.date.toISOString()})),
             categories: categories.map(({ icon, ...rest }) => rest), // Don't send icon to AI
-            earnings 
+            earnings: earnings.map(e => ({...e, date: e.date.toISOString()})), 
           });
           setSpendingSummary(summary.analysis);
         } catch (error) {
