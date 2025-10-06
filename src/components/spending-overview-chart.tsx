@@ -89,7 +89,7 @@ export function SpendingOverviewChart({ data, categories }: SpendingOverviewChar
                   return null
                 }}
               />
-              <Legend onClick={(e) => handleLegendClick(e.dataKey)} />
+              <Legend onClick={(e) => { if (e.dataKey) { handleLegendClick(e.dataKey.toString()); } }} />
               {categoriesWithSpending.map((category) => (
                 <Line
                   key={category.id}
