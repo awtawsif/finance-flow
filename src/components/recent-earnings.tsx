@@ -68,12 +68,17 @@ export function RecentEarnings({ earnings, onEditEarning, onDeleteEarning }: Rec
       </CardHeader>
       <CardContent>
         <Accordion type="multiple" defaultValue={sortedDates.slice(0, 2)}>
-          {sortedDates.map((date) => (
+          {sortedDates.map((date) => {
+             const dailyTotal = groupedEarnings[date].reduce((sum, earning) => sum + earning.amount, 0);
+            return (
             <AccordionItem value={date} key={date}>
               <AccordionTrigger>
-                <h3 className="font-semibold text-sm text-muted-foreground">
-                  {format(new Date(date), 'MMMM d, yyyy')}
-                </h3>
+                <div className="flex w-full justify-between items-center pr-2">
+                   <h3 className="font-semibold text-sm text-muted-foreground">
+                    {format(new Date(date), 'MMMM d, yyyy')}
+                  </h3>
+                  <p className="text-sm font-semibold text-muted-foreground">Tk {dailyTotal.toFixed(2)}</p>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <Table>
@@ -126,7 +131,7 @@ export function RecentEarnings({ earnings, onEditEarning, onDeleteEarning }: Rec
                 </Table>
               </AccordionContent>
             </AccordionItem>
-          ))}
+          )})}
         </Accordion>
       </CardContent>
     </Card>

@@ -51,6 +51,7 @@ import { cn } from '@/lib/utils';
 
 interface BudgetOverviewProps {
   categories: Category[];
+  originalCategories: Category[];
   budgets: Record<string, number>;
   spending: Record<string, number>;
   onSetBudget: (categoryId: string, limit: number) => void;
@@ -64,6 +65,7 @@ type SetBudgetFormValues = z.infer<typeof formSchema>;
 
 export function BudgetOverview({ 
   categories, 
+  originalCategories,
   budgets, 
   spending, 
   onSetBudget, 
@@ -91,9 +93,10 @@ export function BudgetOverview({
   function onSubmit(values: SetBudgetFormValues) {
     if (selectedCategory) {
       onSetBudget(selectedCategory.id, values.limit);
+      const originalCategory = originalCategories.find(c => c.id === selectedCategory.id);
       toast({
         title: 'Budget Updated',
-        description: `Budget for "${selectedCategory.name}" has been set to Tk ${values.limit.toFixed(2)}.`,
+        description: `Budget for "${originalCategory?.name || selectedCategory.name}" has been set to Tk ${values.limit.toFixed(2)}.`,
       });
       setIsDialogOpen(false);
       setSelectedCategory(null);
@@ -127,6 +130,7 @@ export function BudgetOverview({
               const budget = budgets[category.id] || 0;
               const isOverBudget = budget > 0 && spent > budget;
               const progress = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
+              const originalCategory = originalCategories.find(c => c.id === category.id);
 
               return (
               <div key={category.id} className="group flex items-center gap-4">
@@ -135,7 +139,7 @@ export function BudgetOverview({
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between">
-                    <p className="w-28 truncate font-medium" title={category.name}>{category.name}</p>
+                    <p className="font-medium" title={originalCategory?.name}>{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
                       <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : '---'}
                     </p>
@@ -159,7 +163,7 @@ export function BudgetOverview({
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                           This action cannot be undone. This will permanently delete the 
-                          <strong> {category.name}</strong> category and all associated expenses and budgets.
+                          <strong> {originalCategory?.name || category.name}</strong> category and all associated expenses and budgets.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -180,7 +184,7 @@ export function BudgetOverview({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Set Budget for {selectedCategory?.name}</DialogTitle>
+            <DialogTitle>Set Budget for {originalCategories.find(c => c.id === selectedCategory?.id)?.name || selectedCategory?.name}</DialogTitle>
             <DialogDescription>
                Enter the monthly budget limit for this category.
             </DialogDescription>
