@@ -34,6 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AddEarning } from '@/components/add-earning';
 import { RecentEarnings } from '@/components/recent-earnings';
 import { EditEarning } from '@/components/edit-earning';
+import { SpendingOverviewChart } from './spending-overview-chart';
 
 // Helper to get data from localStorage
 function getFromLocalStorage<T>(key: string, defaultValue: T): T {
@@ -320,10 +321,6 @@ export default function Dashboard() {
       return acc;
     }, {} as Record<string, number>);
   }, [expenses]);
-
-  const totalAllocatedBudget = React.useMemo(() => {
-    return Object.values(budgets).reduce((sum, limit) => sum + limit, 0);
-  }, [budgets]);
   
   const { totalSpending, totalBudget } = React.useMemo(() => {
     const totalSpending = expenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -332,6 +329,17 @@ export default function Dashboard() {
   }, [expenses, earnings]);
 
   const remainingBudget = totalBudget - totalSpending;
+  
+  const chartData = React.useMemo(() => {
+    return categories
+      .map(category => ({
+        name: category.name,
+        total: spendingByCategory[category.id] || 0,
+        fill: category.color,
+      }))
+      .filter(item => item.total > 0)
+      .sort((a, b) => b.total - a.total);
+  }, [spendingByCategory, categories]);
 
   // Render a loading state or nothing until the component has mounted on the client
   if (!isClient) {
@@ -418,20 +426,23 @@ export default function Dashboard() {
             spending={spendingByCategory}
             onSetBudget={handleSetBudget}
             onDeleteCategory={handleDeleteCategory}
-            totalAllocated={totalAllocatedBudget}
-            overallBudget={totalBudget}
           />
-          <RecentExpenses 
-            expenses={expenses} 
-            categoryMap={categoryMap}
-            onEditExpense={setExpenseToEdit}
-            onDeleteExpense={handleDeleteExpense}
-          />
-          <RecentEarnings
-            earnings={earnings}
-            onEditEarning={setEarningToEdit}
-            onDeleteEarning={handleDeleteEarning}
-          />
+          <div className="flex flex-col gap-6 xl:col-span-2">
+            <SpendingOverviewChart data={chartData} />
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <RecentExpenses 
+                expenses={expenses} 
+                categoryMap={categoryMap}
+                onEditExpense={setExpenseToEdit}
+                onDeleteExpense={handleDeleteExpense}
+              />
+              <RecentEarnings
+                earnings={earnings}
+                onEditEarning={setEarningToEdit}
+                onDeleteEarning={handleDeleteEarning}
+              />
+            </div>
+          </div>
         </div>
       </div>
       

@@ -17,27 +17,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import type { Earning } from '@/lib/definitions';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 interface RecentEarningsProps {
   earnings: Earning[];
   onEditEarning: (earning: Earning) => void;
   onDeleteEarning: (earningId: string) => void;
-}
-
-function FormattedDate({ date }: { date: Date }) {
-  const [isClient, setIsClient] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return null;
-  }
-
-  return <>{format(new Date(date), 'MMM d, yyyy')}</>;
 }
 
 export function RecentEarnings({ earnings, onEditEarning, onDeleteEarning }: RecentEarningsProps) {
@@ -51,6 +38,21 @@ export function RecentEarnings({ earnings, onEditEarning, onDeleteEarning }: Rec
       variant: 'destructive',
     });
   }
+
+  const groupedEarnings = React.useMemo(() => {
+    return earnings.reduce((acc, earning) => {
+      const dateKey = format(earning.date, 'yyyy-MM-dd');
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(earning);
+      return acc;
+    }, {} as Record<string, Earning[]>);
+  }, [earnings]);
+
+  const sortedDates = React.useMemo(() => {
+    return Object.keys(groupedEarnings).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  }, [groupedEarnings]);
   
   return (
     <Card>
@@ -59,56 +61,66 @@ export function RecentEarnings({ earnings, onEditEarning, onDeleteEarning }: Rec
         <CardDescription>Your latest income.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="hidden pr-0 md:table-cell">Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {earnings.map((earning) => (
-                <TableRow key={earning.id} className="group">
-                  <TableCell className="font-medium">{earning.description}</TableCell>
-                  <TableCell className="text-right font-mono">{earning.amount.toFixed(2)}</TableCell>
-                  <TableCell className="hidden pr-0 md:table-cell"><FormattedDate date={earning.date} /></TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditEarning(earning)}>
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit Earning</span>
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete Earning</span>
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the earning for 
-                              <strong> {earning.description}</strong>.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(earning)}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
+        <div className="space-y-4">
+        {sortedDates.map((date, index) => (
+            <div key={date}>
+              <div className="mb-2">
+                <h3 className="font-semibold text-sm text-muted-foreground">
+                  {format(new Date(date), 'MMMM d, yyyy')}
+                </h3>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right w-[80px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groupedEarnings[date].map((earning) => (
+                      <TableRow key={earning.id} className="group">
+                        <TableCell className="font-medium">{earning.description}</TableCell>
+                        <TableCell className="text-right font-mono">{earning.amount.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditEarning(earning)}>
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Edit Earning</span>
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete Earning</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the earning for 
+                                    <strong> {earning.description}</strong>.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(earning)}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+               {index < sortedDates.length - 1 && <Separator className="mt-4" />}
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

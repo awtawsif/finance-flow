@@ -20,26 +20,13 @@ import { Badge } from '@/components/ui/badge';
 import type { Expense, Category } from '@/lib/definitions';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 interface RecentExpensesProps {
   expenses: Expense[];
   categoryMap: Map<string, Category>;
   onEditExpense: (expense: Expense) => void;
   onDeleteExpense: (expenseId: string) => void;
-}
-
-function FormattedDate({ date }: { date: Date }) {
-  const [isClient, setIsClient] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return null;
-  }
-
-  return <>{format(new Date(date), 'MMM d, yyyy')}</>;
 }
 
 export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteExpense }: RecentExpensesProps) {
@@ -53,7 +40,22 @@ export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteE
       variant: 'destructive',
     });
   }
+
+  const groupedExpenses = React.useMemo(() => {
+    return expenses.reduce((acc, expense) => {
+      const dateKey = format(expense.date, 'yyyy-MM-dd');
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(expense);
+      return acc;
+    }, {} as Record<string, Expense[]>);
+  }, [expenses]);
   
+  const sortedDates = React.useMemo(() => {
+    return Object.keys(groupedExpenses).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  }, [groupedExpenses]);
+
   return (
     <Card>
       <CardHeader>
@@ -61,68 +63,78 @@ export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteE
         <CardDescription>Your latest transactions.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Description</TableHead>
-              <TableHead className="hidden md:table-cell">Category</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="hidden pr-0 md:table-cell">Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {expenses.map((expense) => {
-              const category = categoryMap.get(expense.categoryId);
-              return (
-                <TableRow key={expense.id} className="group">
-                  <TableCell className="font-medium">{expense.description}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {category && (
-                      <Badge variant="outline" className="flex w-fit items-center gap-2">
-                         <category.icon className="h-4 w-4" style={{ color: category.color }} />
-                         {category.name}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">{expense.amount.toFixed(2)}</TableCell>
-                  <TableCell className="hidden pr-0 md:table-cell"><FormattedDate date={expense.date} /></TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditExpense(expense)}>
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit Expense</span>
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete Expense</span>
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the expense for 
-                              <strong> {expense.description}</strong>.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(expense)}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+        <div className="space-y-4">
+          {sortedDates.map((date, index) => (
+            <div key={date}>
+              <div className="mb-2">
+                 <h3 className="font-semibold text-sm text-muted-foreground">
+                  {format(new Date(date), 'MMMM d, yyyy')}
+                </h3>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="hidden md:table-cell">Category</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right w-[80px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groupedExpenses[date].map((expense) => {
+                    const category = categoryMap.get(expense.categoryId);
+                    return (
+                      <TableRow key={expense.id} className="group">
+                        <TableCell className="font-medium">{expense.description}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {category && (
+                            <Badge variant="outline" className="flex w-fit items-center gap-2">
+                               <category.icon className="h-4 w-4" style={{ color: category.color }} />
+                               {category.name}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{expense.amount.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditExpense(expense)}>
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Edit Expense</span>
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete Expense</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the expense for 
+                                    <strong> {expense.description}</strong>.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(expense)}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {index < sortedDates.length - 1 && <Separator className="mt-4" />}
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

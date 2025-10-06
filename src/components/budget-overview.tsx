@@ -55,8 +55,6 @@ interface BudgetOverviewProps {
   spending: Record<string, number>;
   onSetBudget: (categoryId: string, limit: number) => void;
   onDeleteCategory: (categoryId: string) => void;
-  overallBudget: number;
-  totalAllocated: number;
 }
 
 const formSchema = z.object({
@@ -70,8 +68,6 @@ export function BudgetOverview({
   spending, 
   onSetBudget, 
   onDeleteCategory,
-  overallBudget,
-  totalAllocated
 }: BudgetOverviewProps) {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -86,13 +82,6 @@ export function BudgetOverview({
       form.reset({ limit: budgets[selectedCategory.id] || '' as any });
     }
   }, [selectedCategory, budgets, form]);
-
-  const unallocatedAmount = React.useMemo(() => {
-    if (overallBudget <= 0) return 0;
-    const currentCategoryBudget = selectedCategory ? (budgets[selectedCategory.id] || 0) : 0;
-    return overallBudget - totalAllocated + currentCategoryBudget;
-  }, [overallBudget, totalAllocated, selectedCategory, budgets]);
-
 
   function handleDialogTrigger(category: Category) {
     setSelectedCategory(category);
@@ -148,7 +137,7 @@ export function BudgetOverview({
                   <div className="flex justify-between">
                     <p className="font-medium">{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
-                      <span>Tk {spent.toFixed(2)}</span> / Tk {budget > 0 ? budget.toFixed(2) : '---'}
+                      <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : '---'}
                     </p>
                   </div>
                   {budget > 0 && <Progress value={progress} className={cn("h-2 mt-1", isOverBudget && "[&>div]:bg-destructive")} />}
