@@ -8,7 +8,7 @@ import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
-import { Shapes, Download, Upload, MoreHorizontal, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Shapes, Download, Upload, MoreHorizontal, AlertTriangle } from 'lucide-react';
 import { EditExpense } from '@/components/edit-expense';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,15 +34,6 @@ import { AddEarning } from '@/components/add-earning';
 import { RecentEarnings } from '@/components/recent-earnings';
 import { EditEarning } from '@/components/edit-earning';
 import { SpendingOverviewChart } from './spending-overview-chart';
-import { SpendingSummary } from './spending-summary';
-import { summarizeSpending } from '@/ai/flows/summarize-spending';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Card,
-  CardHeader,
-  CardContent,
-} from '@/components/ui/card';
-import { standardizeCategoryNames } from '@/ai/flows/standardize-category-names';
 
 // Helper to get data from localStorage
 function getFromLocalStorage<T>(key: string, defaultValue: T): T {
@@ -78,22 +69,6 @@ function restoreCategoryIcons(storedCategories: Omit<Category, 'icon'>[]): Categ
   });
 }
 
-function SpendingSummaryLoader() {
-  return (
-    <Card className="bg-primary/5 border-primary/20">
-      <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
-        <Skeleton className="h-6 w-6 rounded-full" />
-        <Skeleton className="h-5 w-40" />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="mt-2 h-4 w-3/4" />
-      </CardContent>
-    </Card>
-  );
-}
-
-
 export default function Dashboard() {
   const [isClient, setIsClient] = React.useState(false);
 
@@ -108,11 +83,6 @@ export default function Dashboard() {
   const [showImportConfirm, setShowImportConfirm] = React.useState(false);
   const [showNukeConfirm, setShowNukeConfirm] = React.useState(false);
   const [importedData, setImportedData] = React.useState<any>(null);
-
-  const [spendingSummary, setSpendingSummary] = React.useState<string | null>(null);
-  const [isSummaryLoading, setIsSummaryLoading] = React.useState(true);
-  const [standardizedCategories, setStandardizedCategories] = React.useState<Category[]>([]);
-
 
   const { toast } = useToast();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -153,56 +123,6 @@ export default function Dashboard() {
 
   React.useEffect(() => {
     setCategoryMap(new Map(categories.map(cat => [cat.id, cat])));
-  }, [categories]);
-
-  React.useEffect(() => {
-    async function fetchSummary() {
-      if (expenses.length > 0) {
-        setIsSummaryLoading(true);
-        try {
-          const summary = await summarizeSpending({ 
-            expenses: expenses.map(e => ({...e, date: e.date.toISOString()})),
-            categories: categories.map(({ icon, ...rest }) => rest), // Don't send icon to AI
-            earnings: earnings.map(e => ({...e, date: e.date.toISOString()})), 
-          });
-          setSpendingSummary(summary.analysis);
-        } catch (error) {
-          console.error("Error fetching spending summary:", error);
-          setSpendingSummary("Could not load spending insights at the moment.");
-        } finally {
-          setIsSummaryLoading(false);
-        }
-      } else {
-        setSpendingSummary("No expenses recorded yet. Add an expense to get started!");
-        setIsSummaryLoading(false);
-      }
-    }
-    fetchSummary();
-  }, [expenses, categories, earnings]);
-
-  React.useEffect(() => {
-    async function fetchStandardizedNames() {
-      try {
-        const originalNames = categories.map(c => ({ id: c.id, name: c.name }));
-        const result = await standardizeCategoryNames({ categories: originalNames });
-        
-        const updatedCategories = categories.map(cat => {
-          const newName = result.standardizedCategories.find(sc => sc.id === cat.id)?.name;
-          return newName ? { ...cat, name: newName } : cat;
-        });
-        
-        setStandardizedCategories(updatedCategories);
-
-      } catch (error) {
-        console.error("Error standardizing category names:", error);
-        // If AI fails, use original categories
-        setStandardizedCategories(categories);
-      }
-    }
-
-    if (categories.length > 0) {
-      fetchStandardizedNames();
-    }
   }, [categories]);
 
   const handleAddExpense = React.useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
@@ -479,14 +399,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
-          {isSummaryLoading ? (
-            <SpendingSummaryLoader />
-          ) : (
-            <SpendingSummary title="Spending Insights" analysis={spendingSummary || ''} />
-          )}
-        </div>
-
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <SummaryCard 
             title="Total Budget (Earnings)" 
@@ -508,7 +420,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
           <BudgetOverview 
-            categories={standardizedCategories} 
+            categories={categories} 
             originalCategories={categories}
             budgets={budgets}
             spending={spendingByCategory}

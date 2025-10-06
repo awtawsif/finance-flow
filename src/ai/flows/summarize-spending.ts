@@ -1,79 +1,61 @@
-
-'use server';
-/**
- * @fileOverview A flow that summarizes spending habits.
- *
- * - summarizeSpending - Analyzes expenses and earnings to provide insights.
- * - SpendingSummaryInput - The input type for the summarizeSpending function.
- * - SpendingSummaryOutput - The return type for the summarizeSpending function.
- */
-
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-const SpendingSummaryInputSchema = z.object({
-  expenses: z.array(
-    z.object({
-      id: z.string(),
-      description: z.string(),
-      amount: z.number(),
-      categoryId: z.string(),
-      date: z.string(),
-    })
-  ),
-  categories: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-    })
-  ),
-  earnings: z.array(
-    z.object({
-      id: z.string(),
-      description: z.string(),
-      amount: z.number(),
-      date: z.string(),
-    })
-  ),
-});
-export type SpendingSummaryInput = z.infer<typeof SpendingSummaryInputSchema>;
-
-const SpendingSummaryOutputSchema = z.object({
-  analysis: z.string().describe('A short, insightful, and friendly analysis of the user\'s spending habits. Mention specific days, categories, or trends. e.g., "On Tuesday, you spent the most on Food." or "Your spending on Transportation has decreased this week."'),
-});
-export type SpendingSummaryOutput = z.infer<typeof SpendingSummaryOutputSchema>;
-
-
-export async function summarizeSpending(input: SpendingSummaryInput): Promise<SpendingSummaryOutput> {
-  return summarizeSpendingFlow(input);
-}
-
-const summarizeSpendingFlow = ai.defineFlow(
-  {
-    name: 'summarizeSpendingFlow',
-    inputSchema: SpendingSummaryInputSchema,
-    outputSchema: SpendingSummaryOutputSchema,
+{
+  "name": "nextn",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack -p 9002",
+    "build": "NODE_ENV=production next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
-  async (input) => {
-    const today = new Date();
-    const prompt = `You are a helpful financial assistant reviewing a user's recent transactions for a budget app.
-    Today's date is ${today.toDateString()}.
-    
-    Analyze the provided expenses, earnings, and categories to generate a single, concise, and interesting fact or observation about their spending.
-    Make it feel personal and insightful. For example, you could point out their highest spending day, their top category, or a recent trend.
-    Keep the tone friendly and encouraging.
-
-    Here is the data:
-    - Earnings: ${JSON.stringify(input.earnings)}
-    - Expenses: ${JSON.stringify(input.expenses)}
-    - Categories: ${JSON.stringify(input.categories)}
-    `;
-
-    const { output } = await ai.generate({
-      prompt,
-      output: { schema: SpendingSummaryOutputSchema },
-    });
-    
-    return output!;
+  "dependencies": {
+    "@hookform/resolvers": "^4.1.3",
+    "@radix-ui/react-accordion": "^1.2.3",
+    "@radix-ui/react-alert-dialog": "^1.1.6",
+    "@radix-ui/react-avatar": "^1.1.3",
+    "@radix-ui/react-checkbox": "^1.1.4",
+    "@radix-ui/react-collapsible": "^1.1.11",
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-dropdown-menu": "^2.1.6",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-menubar": "^1.1.6",
+    "@radix-ui/react-popover": "^1.1.6",
+    "@radix-ui/react-progress": "^1.1.2",
+    "@radix-ui/react-radio-group": "^1.2.3",
+    "@radix-ui/react-scroll-area": "^1.2.3",
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-separator": "^1.1.2",
+    "@radix-ui/react-slider": "^1.2.3",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.1.3",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "@radix-ui/react-toast": "^1.2.6",
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.5.0",
+    "embla-carousel-react": "^8.6.0",
+    "firebase": "^11.9.1",
+    "lucide-react": "^0.475.0",
+    "next": "^15.5.4",
+    "patch-package": "^8.0.0",
+    "react": "^18.3.1",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.2",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^3.0.1",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
   }
-);
+}

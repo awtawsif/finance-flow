@@ -104,10 +104,11 @@ export function BudgetOverview({
   }
   
   function handleDelete(categoryId: string) {
+    const categoryToDelete = originalCategories.find(c => c.id === categoryId);
     onDeleteCategory(categoryId);
     toast({
       title: 'Category Deleted',
-      description: 'The category has been successfully deleted.',
+      description: `The ${categoryToDelete?.name} category has been successfully deleted.`,
       variant: 'destructive',
     });
   }
@@ -139,7 +140,7 @@ export function BudgetOverview({
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between">
-                    <p className="font-medium" title={originalCategory?.name}>{category.name}</p>
+                    <p className="font-medium truncate" title={originalCategory?.name}>{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
                       <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : '---'}
                     </p>
