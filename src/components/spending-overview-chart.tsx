@@ -28,6 +28,12 @@ export function SpendingOverviewChart({ data, categories }: SpendingOverviewChar
   
   const categoryMap = React.useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
 
+  const categoriesWithSpending = React.useMemo(() => {
+    return categories.filter(category => 
+      data.some(d => d[category.id] > 0)
+    );
+  }, [data, categories]);
+
   return (
     <Card>
       <CardHeader>
@@ -84,7 +90,7 @@ export function SpendingOverviewChart({ data, categories }: SpendingOverviewChar
                 }}
               />
               <Legend onClick={(e) => handleLegendClick(e.dataKey)} />
-              {categories.map((category) => (
+              {categoriesWithSpending.map((category) => (
                 <Line
                   key={category.id}
                   type="monotone"
