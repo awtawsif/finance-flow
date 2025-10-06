@@ -37,6 +37,7 @@ import { SpendingOverviewChart } from './spending-overview-chart';
 import { format, formatISO, parseISO, compareAsc } from 'date-fns';
 import { EditCategory } from './edit-category';
 
+
 // Helper to get data from localStorage
 function getFromLocalStorage<T>(key: string, defaultValue: T): T {
   if (typeof window === 'undefined') {
@@ -94,7 +95,10 @@ export default function Dashboard() {
   React.useEffect(() => {
     setExpenses(getFromLocalStorage<Expense[]>('expenses', []));
     setEarnings(getFromLocalStorage<Earning[]>('earnings', []));
-    setCategories(restoreCategoryIcons(getFromLocalStorage<Omit<Category, 'icon'>[]>('categories', initialCategories.map(({ icon, ...rest }) => rest))));
+    
+    const storedCategories = restoreCategoryIcons(getFromLocalStorage<Omit<Category, 'icon'>[]>('categories', initialCategories.map(({ icon, ...rest }) => rest)));
+    setCategories(storedCategories);
+
     setBudgets(getFromLocalStorage<Record<string, number>>('budgets', {}));
     setIsClient(true);
   }, []);
@@ -113,9 +117,9 @@ export default function Dashboard() {
   
   React.useEffect(() => {
     if (!isClient) return;
-    // We create a version of categories for serialization that omits the icon
     const serializableCategories = categories.map(({ icon, ...rest }) => rest);
     localStorage.setItem('categories', JSON.stringify(serializableCategories));
+
   }, [categories, isClient]);
   
   React.useEffect(() => {
@@ -123,7 +127,6 @@ export default function Dashboard() {
     localStorage.setItem('budgets', JSON.stringify(budgets));
   }, [budgets, isClient]);
   
-
   React.useEffect(() => {
     setCategoryMap(new Map(categories.map(cat => [cat.id, cat])));
   }, [categories]);
@@ -314,6 +317,7 @@ export default function Dashboard() {
     localStorage.removeItem('expenses');
     localStorage.removeItem('earnings');
     localStorage.removeItem('categories');
+    localStorage.removeItem('standardizedCategories');
     localStorage.removeItem('budgets');
 
     toast({
@@ -449,21 +453,10 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-          <BudgetOverview 
-            categories={categories} 
-            originalCategories={categories}
-            budgets={budgets}
-            spending={spendingByCategory}
-            onSetBudget={handleSetBudget}
-            onEditCategory={setCategoryToEdit}
-            onDeleteCategory={handleDeleteCategory}
-          />
-          <div className="flex flex-col gap-6 xl:col-span-2">
-            <SpendingOverviewChart data={chartData} categories={categories} />
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <RecentExpenses 
-                expenses={expenses} 
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          <div className="grid gap-6 lg:col-span-3">
+             <RecentExpenses
+                expenses={expenses}
                 categoryMap={categoryMap}
                 onEditExpense={setExpenseToEdit}
                 onDeleteExpense={handleDeleteExpense}
@@ -473,8 +466,19 @@ export default function Dashboard() {
                 onEditEarning={setEarningToEdit}
                 onDeleteEarning={handleDeleteEarning}
               />
-            </div>
           </div>
+           <div className="grid gap-6 lg:col-span-2">
+              <BudgetOverview 
+                categories={categories} 
+                originalCategories={categories}
+                budgets={budgets}
+                spending={spendingByCategory}
+                onSetBudget={handleSetBudget}
+                onEditCategory={setCategoryToEdit}
+                onDeleteCategory={handleDeleteCategory}
+              />
+              <SpendingOverviewChart data={chartData} categories={categories} />
+            </div>
         </div>
       </div>
       
