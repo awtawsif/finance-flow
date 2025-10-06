@@ -34,6 +34,7 @@ import { AddEarning } from '@/components/add-earning';
 import { RecentEarnings } from '@/components/recent-earnings';
 import { EditEarning } from '@/components/edit-earning';
 import { SpendingOverviewChart } from './spending-overview-chart';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, formatISO } from 'date-fns';
 
 // Helper to get data from localStorage
 function getFromLocalStorage<T>(key: string, defaultValue: T): T {
@@ -330,15 +331,41 @@ export default function Dashboard() {
   const remainingBudget = totalBudget - totalSpending;
   
   const chartData = React.useMemo(() => {
-    return categories
-      .map(category => ({
-        name: category.name,
-        total: spendingByCategory[category.id] || 0,
-        fill: category.color,
-      }))
-      .filter(item => item.total > 0)
-      .sort((a, b) => b.total - a.total);
-  }, [spendingByCategory, categories]);
+    if (expenses.length === 0) return [];
+  
+    // Get the range of dates for the current month based on existing expenses
+    const now = new Date();
+    const firstDay = startOfMonth(now);
+    const lastDay = endOfMonth(now);
+    const daysInMonth = eachDayOfInterval({ start: firstDay, end: lastDay });
+  
+    // Group expenses by date and category
+    const dailyExpenses = expenses.reduce((acc, expense) => {
+      const dateKey = formatISO(expense.date, { representation: 'date' });
+      if (!acc[dateKey]) {
+        acc[dateKey] = {};
+      }
+      if (!acc[dateKey][expense.categoryId]) {
+        acc[dateKey][expense.categoryId] = 0;
+      }
+      acc[dateKey][expense.categoryId] += expense.amount;
+      return acc;
+    }, {} as Record<string, Record<string, number>>);
+  
+    // Create the data structure for the chart
+    return daysInMonth.map(day => {
+      const dateKey = formatISO(day, { representation: 'date' });
+      const dayData: { [key: string]: string | number } = {
+        date: format(day, 'd'), // Format as "1", "2", etc.
+      };
+  
+      categories.forEach(category => {
+        dayData[category.id] = dailyExpenses[dateKey]?.[category.id] || 0;
+      });
+  
+      return dayData;
+    });
+  }, [expenses, categories]);
 
   // Render a loading state or nothing until the component has mounted on the client
   if (!isClient) {
@@ -428,7 +455,7 @@ export default function Dashboard() {
             onDeleteCategory={handleDeleteCategory}
           />
           <div className="flex flex-col gap-6 xl:col-span-2">
-            <SpendingOverviewChart data={chartData} />
+            <SpendingOverviewChart data={chartData} categories={categories} />
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <RecentExpenses 
                 expenses={expenses} 

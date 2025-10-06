@@ -1,6 +1,7 @@
 "use client"
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import * as React from 'react';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
 
 import {
   Card,
@@ -9,30 +10,39 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import type { Category } from "@/lib/definitions";
 
 interface SpendingOverviewChartProps {
-  data: {
-    name: string
-    total: number
-    fill: string
-  }[]
+  data: any[];
+  categories: Category[];
 }
 
-export function SpendingOverviewChart({ data }: SpendingOverviewChartProps) {
+export function SpendingOverviewChart({ data, categories }: SpendingOverviewChartProps) {
+  const [activeCategories, setActiveCategories] = React.useState<Record<string, boolean>>(
+    categories.reduce((acc, cat) => ({ ...acc, [cat.id]: true }), {})
+  );
+
+  const handleLegendClick = (dataKey: string) => {
+    setActiveCategories(prev => ({ ...prev, [dataKey]: !prev[dataKey] }));
+  };
+  
+  const categoryMap = React.useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Spending Overview</CardTitle>
         <CardDescription>
-          A visual breakdown of your spending by category this month.
+          Your daily spending trends for the current month.
         </CardDescription>
       </CardHeader>
       <CardContent className="pl-2">
         <ResponsiveContainer width="100%" height={350}>
           {data.length > 0 ? (
-            <BarChart data={data}>
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
-                dataKey="name"
+                dataKey="date"
                 stroke="#888888"
                 fontSize={12}
                 tickLine={false}
@@ -46,19 +56,25 @@ export function SpendingOverviewChart({ data }: SpendingOverviewChartProps) {
                 tickFormatter={(value) => `Tk ${value}`}
               />
                <Tooltip
-                cursor={{ fill: 'transparent' }}
-                content={({ active, payload }) => {
+                cursor={{ strokeDasharray: '3 3' }}
+                content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
                       <div className="rounded-lg border bg-background p-2 shadow-sm">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex flex-col space-y-1">
-                            <span className="text-[0.70rem] uppercase text-muted-foreground">
-                              {payload[0].payload.name}
-                            </span>
-                            <span className="font-bold text-muted-foreground">
-                              Tk {payload[0].value}
-                            </span>
+                        <div className="grid grid-cols-1 gap-2">
+                           <p className="text-sm font-bold text-foreground">{label}</p>
+                           <div className="grid grid-cols-1 gap-1.5">
+                            {payload.map((item) => {
+                              const category = categoryMap.get(item.dataKey as string);
+                              if (item.value === 0) return null;
+                              return(
+                              <div key={item.dataKey} className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full" style={{backgroundColor: item.color}}/>
+                                <span className="text-xs text-muted-foreground">{category?.name}</span>
+                                <span className="ml-auto text-xs font-semibold text-foreground">Tk {item.value}</span>
+                              </div>
+                            )}
+                            )}
                           </div>
                         </div>
                       </div>
@@ -67,8 +83,21 @@ export function SpendingOverviewChart({ data }: SpendingOverviewChartProps) {
                   return null
                 }}
               />
-              <Bar dataKey="total" radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <Legend onClick={(e) => handleLegendClick(e.dataKey)} />
+              {categories.map((category) => (
+                <Line
+                  key={category.id}
+                  type="monotone"
+                  dataKey={category.id}
+                  name={category.name}
+                  stroke={category.color}
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                  hide={!activeCategories[category.id]}
+                />
+              ))}
+            </LineChart>
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <p className="text-muted-foreground">No spending data for this month yet.</p>
