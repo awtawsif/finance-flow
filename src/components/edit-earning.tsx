@@ -34,6 +34,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import type { Earning } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
+import { useDataContext } from '@/context/data-context';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -45,11 +46,11 @@ type EditEarningFormValues = z.infer<typeof formSchema>;
 
 interface EditEarningProps {
   earning: Earning;
-  onUpdateEarning: (earning: Earning) => void;
   onClose: () => void;
 }
 
-export function EditEarning({ earning, onUpdateEarning, onClose }: EditEarningProps) {
+export function EditEarning({ earning, onClose }: EditEarningProps) {
+  const { updateEarning } = useDataContext();
   const { toast } = useToast();
 
   const form = useForm<EditEarningFormValues>({
@@ -62,7 +63,7 @@ export function EditEarning({ earning, onUpdateEarning, onClose }: EditEarningPr
   });
 
   function onSubmit(values: EditEarningFormValues) {
-    onUpdateEarning({ ...earning, ...values });
+    updateEarning({ ...earning, ...values });
     toast({
       title: 'Earning Updated',
       description: `Successfully updated "${values.description}".`,

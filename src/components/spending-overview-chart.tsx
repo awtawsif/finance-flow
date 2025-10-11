@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
-
+import { format, formatISO, parseISO, compareAsc } from 'date-fns';
 import {
   Card,
   CardContent,
@@ -11,13 +11,42 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import type { Category } from "@/lib/definitions";
+import { useDataContext } from '@/context/data-context';
 
-interface SpendingOverviewChartProps {
-  data: any[];
-  categories: Category[];
-}
+export function SpendingOverviewChart() {
+  const { expenses, categories } = useDataContext();
 
-export function SpendingOverviewChart({ data, categories }: SpendingOverviewChartProps) {
+  const chartData = React.useMemo(() => {
+    if (expenses.length === 0) return [];
+  
+    // Group expenses by date and category
+    const dailyExpenses = expenses.reduce((acc, expense) => {
+      const dateKey = formatISO(expense.date, { representation: 'date' });
+      if (!acc[dateKey]) {
+        acc[dateKey] = { date: format(expense.date, 'd MMM') };
+         categories.forEach(category => {
+          acc[dateKey][category.id] = 0;
+        });
+      }
+      acc[dateKey][expense.categoryId] = (acc[dateKey][expense.categoryId] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, { date: string, [key: string]: any }>);
+  
+    // Create the data structure for the chart
+    const dataPoints = Object.keys(dailyExpenses).map(dateKey => ({
+      ...dailyExpenses[dateKey],
+      dateKey: dateKey
+    }));
+
+    // Sort by date
+    dataPoints.sort((a, b) => compareAsc(parseISO(a.dateKey), parseISO(b.dateKey)));
+    
+    // Only use dates with spending
+    return dataPoints.filter(dp => {
+      return categories.some(cat => dp[cat.id] > 0);
+    });
+  }, [expenses, categories]);
+
   const [activeCategories, setActiveCategories] = React.useState<Record<string, boolean>>(
     categories.reduce((acc, cat) => ({ ...acc, [cat.id]: true }), {})
   );
@@ -30,9 +59,9 @@ export function SpendingOverviewChart({ data, categories }: SpendingOverviewChar
 
   const categoriesWithSpending = React.useMemo(() => {
     return categories.filter(category => 
-      data.some(d => d[category.id] > 0)
+      chartData.some(d => d[category.id] > 0)
     );
-  }, [data, categories]);
+  }, [chartData, categories]);
 
   return (
     <Card>
@@ -44,8 +73,8 @@ export function SpendingOverviewChart({ data, categories }: SpendingOverviewChar
       </CardHeader>
       <CardContent className="pl-2">
         <ResponsiveContainer width="100%" height={350}>
-          {data.length > 0 ? (
-            <LineChart data={data}>
+          {chartData.length > 0 ? (
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="date"

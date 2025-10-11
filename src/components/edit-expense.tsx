@@ -39,8 +39,9 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import type { Expense, Category } from '@/lib/definitions';
+import type { Expense } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
+import { useDataContext } from '@/context/data-context';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -53,12 +54,11 @@ type EditExpenseFormValues = z.infer<typeof formSchema>;
 
 interface EditExpenseProps {
   expense: Expense;
-  onUpdateExpense: (expense: Expense) => void;
   onClose: () => void;
-  categories: Category[];
 }
 
-export function EditExpense({ expense, onUpdateExpense, onClose, categories }: EditExpenseProps) {
+export function EditExpense({ expense, onClose }: EditExpenseProps) {
+  const { categories, updateExpense } = useDataContext();
   const { toast } = useToast();
 
   const form = useForm<EditExpenseFormValues>({
@@ -72,7 +72,7 @@ export function EditExpense({ expense, onUpdateExpense, onClose, categories }: E
   });
 
   function onSubmit(values: EditExpenseFormValues) {
-    onUpdateExpense({ ...expense, ...values });
+    updateExpense({ ...expense, ...values });
     toast({
       title: 'Expense Updated',
       description: `Successfully updated "${values.description}".`,

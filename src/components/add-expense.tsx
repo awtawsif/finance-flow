@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { Expense, Category } from '@/lib/definitions';
+import { useDataContext } from '@/context/data-context';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -43,12 +43,8 @@ const formSchema = z.object({
 
 type AddExpenseFormValues = z.infer<typeof formSchema>;
 
-interface AddExpenseProps {
-  onAddExpense: (expense: Omit<Expense, 'id' | 'date'>) => void;
-  categories: Category[];
-}
-
-export function AddExpense({ onAddExpense, categories }: AddExpenseProps) {
+export function AddExpense() {
+  const { categories, addExpense } = useDataContext();
   const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
 
@@ -62,7 +58,7 @@ export function AddExpense({ onAddExpense, categories }: AddExpenseProps) {
   });
 
   function onSubmit(values: AddExpenseFormValues) {
-    onAddExpense(values);
+    addExpense(values);
     toast({
       title: 'Expense Added',
       description: `Successfully added "${values.description}".`,

@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Category } from '@/lib/definitions';
+import { useDataContext } from '@/context/data-context';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Category name must be at least 2 characters.' }),
@@ -35,11 +36,11 @@ type EditCategoryFormValues = z.infer<typeof formSchema>;
 
 interface EditCategoryProps {
   category: Category;
-  onUpdateCategory: (category: Category) => void;
   onClose: () => void;
 }
 
-export function EditCategory({ category, onUpdateCategory, onClose }: EditCategoryProps) {
+export function EditCategory({ category, onClose }: EditCategoryProps) {
+  const { updateCategory } = useDataContext();
   const { toast } = useToast();
 
   const form = useForm<EditCategoryFormValues>({
@@ -51,7 +52,7 @@ export function EditCategory({ category, onUpdateCategory, onClose }: EditCatego
   });
 
   function onSubmit(values: EditCategoryFormValues) {
-    onUpdateCategory({ ...category, ...values });
+    updateCategory({ ...category, ...values });
     toast({
       title: 'Category Updated',
       description: `Successfully updated "${values.name}".`,

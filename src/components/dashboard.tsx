@@ -1,8 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { initialCategories } from '@/lib/data';
-import type { Expense, Category, Earning } from '@/lib/definitions';
 import { SummaryCard } from '@/components/summary-card';
 import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
@@ -34,308 +32,37 @@ import { AddEarning } from '@/components/add-earning';
 import { RecentEarnings } from '@/components/recent-earnings';
 import { EditEarning } from '@/components/edit-earning';
 import { SpendingOverviewChart } from './spending-overview-chart';
-import { format, formatISO, parseISO, compareAsc } from 'date-fns';
 import { EditCategory } from './edit-category';
+import { useDataContext } from '@/context/data-context';
 
-
-// Helper to get data from localStorage
-function getFromLocalStorage<T>(key: string, defaultValue: T): T {
-  if (typeof window === 'undefined') {
-    return defaultValue;
-  }
-  const storedValue = localStorage.getItem(key);
-  if (storedValue) {
-    try {
-      return JSON.parse(storedValue, (k, v) => {
-        // Reviver function to convert date strings back to Date objects
-        if (k === 'date' && typeof v === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(v)) {
-          return new Date(v);
-        }
-        return v;
-      });
-    } catch (error) {
-      console.error(`Error parsing localStorage key "${key}":`, error);
-      return defaultValue;
-    }
-  }
-  return defaultValue;
-}
-
-// Helper to restore icon functions to categories loaded from localStorage
-function restoreCategoryIcons(storedCategories: Omit<Category, 'icon'>[]): Category[] {
-  const initialCategoryMap = new Map(initialCategories.map(cat => [cat.id, cat.icon]));
-  return storedCategories.map(cat => {
-      return {
-        ...cat,
-        icon: initialCategoryMap.get(cat.id) || Shapes,
-      };
-  });
-}
 
 export default function Dashboard() {
-  const [isClient, setIsClient] = React.useState(false);
-
-  const [expenses, setExpenses] = React.useState<Expense[]>([]);
-  const [earnings, setEarnings] = React.useState<Earning[]>([]);
-  const [categories, setCategories] = React.useState<Category[]>(initialCategories);
-  const [budgets, setBudgets] = React.useState<Record<string, number>>({});
-  
-  const [categoryMap, setCategoryMap] = React.useState(() => new Map(categories.map(cat => [cat.id, cat])));
-  const [expenseToEdit, setExpenseToEdit] = React.useState<Expense | null>(null);
-  const [earningToEdit, setEarningToEdit] = React.useState<Earning | null>(null);
-  const [categoryToEdit, setCategoryToEdit] = React.useState<Category | null>(null);
-  const [showImportConfirm, setShowImportConfirm] = React.useState(false);
-  const [showNukeConfirm, setShowNukeConfirm] = React.useState(false);
-  const [importedData, setImportedData] = React.useState<any>(null);
+  const {
+    isClient,
+    expenses,
+    earnings,
+    expenseToEdit,
+    setExpenseToEdit,
+    earningToEdit,
+    setEarningToEdit,
+    categoryToEdit,
+    setCategoryToEdit,
+    handleExportData,
+    handleImportClick,
+    fileInputRef,
+    handleFileChange,
+    showImportConfirm,
+    setShowImportConfirm,
+    confirmImport,
+    showNukeConfirm,
+    setShowNukeConfirm,
+    confirmNuke,
+    importedData,
+    setImportedData,
+  } = useDataContext();
 
   const { toast } = useToast();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Load data from localStorage on initial client-side render
-  React.useEffect(() => {
-    setExpenses(getFromLocalStorage<Expense[]>('expenses', []));
-    setEarnings(getFromLocalStorage<Earning[]>('earnings', []));
-    
-    const storedCategories = restoreCategoryIcons(getFromLocalStorage<Omit<Category, 'icon'>[]>('categories', initialCategories.map(({ icon, ...rest }) => rest)));
-    setCategories(storedCategories);
-
-    setBudgets(getFromLocalStorage<Record<string, number>>('budgets', {}));
-    setIsClient(true);
-  }, []);
-
-  
-  // Persist state to localStorage whenever it changes
-  React.useEffect(() => {
-    if (!isClient) return;
-    localStorage.setItem('expenses', JSON.stringify(expenses));
-  }, [expenses, isClient]);
-
-  React.useEffect(() => {
-    if (!isClient) return;
-    localStorage.setItem('earnings', JSON.stringify(earnings));
-  }, [earnings, isClient]);
-  
-  React.useEffect(() => {
-    if (!isClient) return;
-    const serializableCategories = categories.map(({ icon, ...rest }) => rest);
-    localStorage.setItem('categories', JSON.stringify(serializableCategories));
-
-  }, [categories, isClient]);
-  
-  React.useEffect(() => {
-    if (!isClient) return;
-    localStorage.setItem('budgets', JSON.stringify(budgets));
-  }, [budgets, isClient]);
-  
-  React.useEffect(() => {
-    setCategoryMap(new Map(categories.map(cat => [cat.id, cat])));
-  }, [categories]);
-
-  const handleAddExpense = React.useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
-    const newExpense: Expense = {
-      ...newExpenseData,
-      id: `exp-${Date.now()}`,
-      date: new Date(),
-    };
-    setExpenses((prev) => [newExpense, ...prev]);
-  }, []);
-  
-  const handleUpdateExpense = React.useCallback((updatedExpense: Expense) => {
-    setExpenses((prev) => 
-      prev.map((expense) => 
-        expense.id === updatedExpense.id ? updatedExpense : expense
-      )
-    );
-    setExpenseToEdit(null);
-  }, []);
-
-  const handleDeleteExpense = React.useCallback((expenseId: string) => {
-    setExpenses((prev) => prev.filter((expense) => expense.id !== expenseId));
-  }, []);
-
-  const handleAddEarning = React.useCallback((newEarningData: Omit<Earning, 'id' | 'date'>) => {
-    const newEarning: Earning = {
-      ...newEarningData,
-      id: `earn-${Date.now()}`,
-      date: new Date(),
-    };
-    setEarnings((prev) => [newEarning, ...prev]);
-  }, []);
-  
-  const handleUpdateEarning = React.useCallback((updatedEarning: Earning) => {
-    setEarnings((prev) => 
-      prev.map((earning) => 
-        earning.id === updatedEarning.id ? updatedEarning : earning
-      )
-    );
-    setEarningToEdit(null);
-  }, []);
-
-  const handleDeleteEarning = React.useCallback((earningId: string) => {
-    setEarnings((prev) => prev.filter((earning) => earning.id !== earningId));
-  }, []);
-  
-  const handleSetBudget = React.useCallback((categoryId: string, limit: number) => {
-    setBudgets((prev) => ({ ...prev, [categoryId]: limit }));
-  }, []);
-
-  const handleAddCategory = React.useCallback((categoryData: { name: string; color: string }) => {
-    const newCategory: Category = {
-      id: `cat-${Date.now()}`,
-      name: categoryData.name,
-      icon: Shapes,
-      color: categoryData.color,
-    };
-    setCategories((prev) => [...prev, newCategory]);
-  }, []);
-  
-  const handleUpdateCategory = React.useCallback((updatedCategory: Category) => {
-    setCategories((prev) => 
-      prev.map((category) => 
-        category.id === updatedCategory.id ? updatedCategory : category
-      )
-    );
-    setCategoryToEdit(null);
-  }, []);
-
-  const handleDeleteCategory = React.useCallback((categoryId: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
-    setBudgets((prev) => {
-      const newBudgets = { ...prev };
-      delete newBudgets[categoryId];
-      return newBudgets;
-    });
-    setExpenses((prev) => prev.filter((e) => e.categoryId !== categoryId));
-  }, []);
-
-  const handleExportData = () => {
-    const dataToExport = {
-      expenses,
-      earnings,
-      categories: categories.map(({ icon, ...rest }) => rest), // Don't export icons
-      budgets,
-    };
-    const dataStr = JSON.stringify(dataToExport, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `financeflow-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast({ title: 'Data Exported', description: 'Your data has been successfully downloaded.' });
-  };
-  
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result;
-        if (typeof text !== 'string') throw new Error("File is not valid text");
-        const parsedData = JSON.parse(text);
-
-        // Basic validation
-        if (parsedData.expenses && parsedData.categories && parsedData.budgets) {
-          setImportedData(parsedData);
-          setShowImportConfirm(true);
-        } else {
-          throw new Error("Invalid data structure in JSON file.");
-        }
-      } catch (error) {
-        console.error("Import error:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Import Failed',
-          description: error instanceof Error ? error.message : 'Could not read or parse the file.',
-        });
-      } finally {
-        // Reset file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }
-    };
-    reader.readAsText(file);
-  };
-  
-  const confirmImport = () => {
-    if (!importedData) return;
-
-    // --- BACKWARD COMPATIBILITY LOGIC ---
-    let importedEarnings = [];
-    if (importedData.earnings) {
-      // New format: has earnings array
-      importedEarnings = importedData.earnings.map((earn: any) => ({
-        ...earn,
-        date: new Date(earn.date),
-      }));
-    } else if (importedData.overallBudget) {
-      // Old format: has overallBudget, convert it to a single earning
-      importedEarnings = [{
-        id: `earn-${Date.now()}`,
-        description: 'Imported Budget',
-        amount: importedData.overallBudget,
-        date: new Date(),
-      }];
-    }
-  
-    // This reviver is needed because JSON.parse in getFromLocalStorage won't run here
-    const parsedExpenses = importedData.expenses.map((exp: any) => ({
-        ...exp,
-        date: new Date(exp.date),
-    }));
-
-    const restoredCategories = restoreCategoryIcons(importedData.categories);
-  
-    setExpenses(parsedExpenses);
-    setEarnings(importedEarnings);
-    setCategories(restoredCategories);
-    setBudgets(importedData.budgets);
-  
-    toast({ title: 'Import Successful', description: 'Your data has been restored.' });
-    setShowImportConfirm(false);
-    setImportedData(null);
-  };
-  
-  const confirmNuke = () => {
-    // Clear state
-    setExpenses([]);
-    setEarnings([]);
-    setCategories(initialCategories);
-    setBudgets({});
-    
-    // Clear localStorage
-    localStorage.removeItem('expenses');
-    localStorage.removeItem('earnings');
-    localStorage.removeItem('categories');
-    localStorage.removeItem('standardizedCategories');
-    localStorage.removeItem('budgets');
-
-    toast({
-      variant: 'destructive',
-      title: 'Data Cleared',
-      description: 'All your data has been permanently deleted.',
-    });
-    setShowNukeConfirm(false);
-  };
-
-
-  const spendingByCategory = React.useMemo(() => {
-    return expenses.reduce((acc, expense) => {
-      acc[expense.categoryId] = (acc[expense.categoryId] || 0) + expense.amount;
-      return acc;
-    }, {} as Record<string, number>);
-  }, [expenses]);
-  
   const { totalSpending, totalBudget } = React.useMemo(() => {
     const totalSpending = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     const totalEarnings = earnings.reduce((sum, earn) => sum + earn.amount, 0);
@@ -344,37 +71,6 @@ export default function Dashboard() {
 
   const remainingBudget = totalBudget - totalSpending;
   
-  const chartData = React.useMemo(() => {
-    if (expenses.length === 0) return [];
-  
-    // Group expenses by date and category
-    const dailyExpenses = expenses.reduce((acc, expense) => {
-      const dateKey = formatISO(expense.date, { representation: 'date' });
-      if (!acc[dateKey]) {
-        acc[dateKey] = { date: format(expense.date, 'd MMM') };
-         categories.forEach(category => {
-          acc[dateKey][category.id] = 0;
-        });
-      }
-      acc[dateKey][expense.categoryId] = (acc[dateKey][expense.categoryId] || 0) + expense.amount;
-      return acc;
-    }, {} as Record<string, { date: string, [key: string]: any }>);
-  
-    // Create the data structure for the chart
-    const dataPoints = Object.keys(dailyExpenses).map(dateKey => ({
-      ...dailyExpenses[dateKey],
-      dateKey: dateKey
-    }));
-
-    // Sort by date
-    dataPoints.sort((a, b) => compareAsc(parseISO(a.dateKey), parseISO(b.dateKey)));
-    
-    // Only use dates with spending
-    return dataPoints.filter(dp => {
-      return categories.some(cat => dp[cat.id] > 0);
-    });
-  }, [expenses, categories]);
-
   // Render a loading state or nothing until the component has mounted on the client
   if (!isClient) {
     return null;
@@ -388,8 +84,8 @@ export default function Dashboard() {
             Welcome Back!
           </h1>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-             <AddEarning onAddEarning={handleAddEarning} />
-             <AddExpense onAddExpense={handleAddExpense} categories={categories} />
+             <AddEarning />
+             <AddExpense />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -455,40 +151,21 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
           <div className="grid gap-6">
-             <RecentExpenses
-                expenses={expenses}
-                categoryMap={categoryMap}
-                onEditExpense={setExpenseToEdit}
-                onDeleteExpense={handleDeleteExpense}
-              />
+             <RecentExpenses onEditExpense={setExpenseToEdit} />
           </div>
            <div className="grid gap-6">
-              <BudgetOverview 
-                categories={categories} 
-                originalCategories={categories}
-                budgets={budgets}
-                spending={spendingByCategory}
-                onSetBudget={handleSetBudget}
-                onEditCategory={setCategoryToEdit}
-                onDeleteCategory={handleDeleteCategory}
-              />
-               <RecentEarnings
-                earnings={earnings}
-                onEditEarning={setEarningToEdit}
-                onDeleteEarning={handleDeleteEarning}
-              />
-              <SpendingOverviewChart data={chartData} categories={categories} />
+              <BudgetOverview />
+               <RecentEarnings onEditEarning={setEarningToEdit} />
+              <SpendingOverviewChart />
             </div>
         </div>
       </div>
       
-      <AddCategory onAddCategory={handleAddCategory} />
+      <AddCategory />
 
       {expenseToEdit && (
         <EditExpense
           expense={expenseToEdit}
-          categories={categories}
-          onUpdateExpense={handleUpdateExpense}
           onClose={() => setExpenseToEdit(null)}
         />
       )}
@@ -496,7 +173,6 @@ export default function Dashboard() {
       {earningToEdit && (
         <EditEarning
           earning={earningToEdit}
-          onUpdateEarning={handleUpdateEarning}
           onClose={() => setEarningToEdit(null)}
         />
       )}
@@ -504,7 +180,6 @@ export default function Dashboard() {
       {categoryToEdit && (
         <EditCategory
           category={categoryToEdit}
-          onUpdateCategory={handleUpdateCategory}
           onClose={() => setCategoryToEdit(null)}
         />
       )}

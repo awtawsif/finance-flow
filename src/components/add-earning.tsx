@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { Earning } from '@/lib/definitions';
+import { useDataContext } from '@/context/data-context';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -35,11 +35,8 @@ const formSchema = z.object({
 
 type AddEarningFormValues = z.infer<typeof formSchema>;
 
-interface AddEarningProps {
-  onAddEarning: (earning: Omit<Earning, 'id' | 'date'>) => void;
-}
-
-export function AddEarning({ onAddEarning }: AddEarningProps) {
+export function AddEarning() {
+  const { addEarning } = useDataContext();
   const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
 
@@ -52,7 +49,7 @@ export function AddEarning({ onAddEarning }: AddEarningProps) {
   });
 
   function onSubmit(values: AddEarningFormValues) {
-    onAddEarning(values);
+    addEarning(values);
     toast({
       title: 'Earning Added',
       description: `Successfully added "${values.description}".`,

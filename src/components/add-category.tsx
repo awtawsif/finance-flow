@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useDataContext } from '@/context/data-context';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Category name must be at least 2 characters.' }),
@@ -34,11 +35,8 @@ const formSchema = z.object({
 
 type AddCategoryFormValues = z.infer<typeof formSchema>;
 
-interface AddCategoryProps {
-  onAddCategory: (data: { name: string; color: string }) => void;
-}
-
-export function AddCategory({ onAddCategory }: AddCategoryProps) {
+export function AddCategory() {
+  const { addCategory } = useDataContext();
   const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
 
@@ -51,7 +49,7 @@ export function AddCategory({ onAddCategory }: AddCategoryProps) {
   });
 
   function onSubmit(values: AddCategoryFormValues) {
-    onAddCategory(values);
+    addCategory(values);
     toast({
       title: 'Category Added',
       description: `Successfully added the "${values.name}" category.`,

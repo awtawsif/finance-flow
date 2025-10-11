@@ -47,32 +47,23 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import type { Category } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
-
-
-interface BudgetOverviewProps {
-  categories: Category[];
-  originalCategories: Category[];
-  budgets: Record<string, number>;
-  spending: Record<string, number>;
-  onSetBudget: (categoryId: string, limit: number) => void;
-  onEditCategory: (category: Category) => void;
-  onDeleteCategory: (categoryId: string) => void;
-}
+import { useDataContext } from '@/context/data-context';
 
 const formSchema = z.object({
   limit: z.coerce.number().positive({ message: 'Budget must be a positive number.' }),
 });
 type SetBudgetFormValues = z.infer<typeof formSchema>;
 
-export function BudgetOverview({ 
-  categories, 
-  originalCategories,
-  budgets, 
-  spending, 
-  onSetBudget, 
-  onEditCategory,
-  onDeleteCategory,
-}: BudgetOverviewProps) {
+export function BudgetOverview() {
+  const { 
+    categories, 
+    budgets, 
+    expenses,
+    setBudget, 
+    deleteCategory,
+    setCategoryToEdit 
+  } = useDataContext();
+  
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [selectedCategory, setSelectedCategory] = React.useState<Category | null>(null);
@@ -81,6 +72,13 @@ export function BudgetOverview({
     resolver: zodResolver(formSchema),
   });
   
+  const spendingByCategory = React.useMemo(() => {
+    return expenses.reduce((acc, expense) => {
+      acc[expense.categoryId] = (acc[expense.categoryId] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [expenses]);
+
   React.useEffect(() => {
     if (selectedCategory) {
       form.reset({ limit: budgets[selectedCategory.id] || '' as any });
@@ -94,11 +92,10 @@ export function BudgetOverview({
 
   function onSubmit(values: SetBudgetFormValues) {
     if (selectedCategory) {
-      onSetBudget(selectedCategory.id, values.limit);
-      const originalCategory = originalCategories.find(c => c.id === selectedCategory.id);
+      setBudget(selectedCategory.id, values.limit);
       toast({
         title: 'Budget Updated',
-        description: `Budget for "${originalCategory?.name || selectedCategory.name}" has been set to Tk ${values.limit.toFixed(2)}.`,
+        description: `Budget for "${selectedCategory.name}" has been set to Tk ${values.limit.toFixed(2)}.`,
       });
       setIsDialogOpen(false);
       setSelectedCategory(null);
@@ -106,14 +103,20 @@ export function BudgetOverview({
   }
   
   function handleDelete(categoryId: string) {
-    const categoryToDelete = originalCategories.find(c => c.id === categoryId);
-    onDeleteCategory(categoryId);
+    const categoryToDelete = categories.find(c => c.id === categoryId);
+    deleteCategory(categoryId);
     toast({
       title: 'Category Deleted',
       description: `The ${categoryToDelete?.name} category has been successfully deleted.`,
       variant: 'destructive',
     });
   }
+  
+  const categoriesWithSpending = React.useMemo(() => {
+    return categories.filter(category => 
+      expenses.some(d => d.categoryId === category.id)
+    );
+  }, [expenses, categories]);
 
   return (
     <>
@@ -129,11 +132,10 @@ export function BudgetOverview({
         <CardContent>
           <div className="space-y-6">
             {categories.map((category) => {
-              const spent = spending[category.id] || 0;
+              const spent = spendingByCategory[category.id] || 0;
               const budget = budgets[category.id] || 0;
               const isOverBudget = budget > 0 && spent > budget;
               const progress = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
-              const originalCategory = originalCategories.find(c => c.id === category.id);
 
               return (
               <div key={category.id} className="group flex items-center gap-4">
@@ -142,7 +144,7 @@ export function BudgetOverview({
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between">
-                    <p className="font-medium truncate" title={originalCategory?.name}>{category.name}</p>
+                    <p className="font-medium truncate" title={category.name}>{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
                       <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : '---'}
                     </p>
@@ -154,7 +156,7 @@ export function BudgetOverview({
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Edit Budget</span>
                   </Button>
-                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditCategory(category)}>
+                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCategoryToEdit(category)}>
                     <Settings className="h-4 w-4" />
                     <span className="sr-only">Edit Category</span>
                   </Button>
@@ -170,7 +172,7 @@ export function BudgetOverview({
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                           This action cannot be undone. This will permanently delete the 
-                          <strong> {originalCategory?.name || category.name}</strong> category and all associated expenses and budgets.
+                          <strong> {category.name}</strong> category and all associated expenses and budgets.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -191,7 +193,7 @@ export function BudgetOverview({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Set Budget for {originalCategories.find(c => c.id === selectedCategory?.id)?.name || selectedCategory?.name}</DialogTitle>
+            <DialogTitle>Set Budget for {selectedCategory?.name}</DialogTitle>
             <DialogDescription>
                Enter the monthly budget limit for this category.
             </DialogDescription>

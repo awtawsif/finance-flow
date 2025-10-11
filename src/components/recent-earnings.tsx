@@ -26,18 +26,19 @@ import {
 import type { Earning } from '@/lib/definitions';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { useDataContext } from '@/context/data-context';
+
 
 interface RecentEarningsProps {
-  earnings: Earning[];
   onEditEarning: (earning: Earning) => void;
-  onDeleteEarning: (earningId: string) => void;
 }
 
-export function RecentEarnings({ earnings, onEditEarning, onDeleteEarning }: RecentEarningsProps) {
+export function RecentEarnings({ onEditEarning }: RecentEarningsProps) {
+  const { earnings, deleteEarning } = useDataContext();
   const { toast } = useToast();
 
   function handleDelete(earning: Earning) {
-    onDeleteEarning(earning.id);
+    deleteEarning(earning.id);
     toast({
       title: 'Earning Deleted',
       description: `"${earning.description}" has been successfully deleted.`,

@@ -24,22 +24,25 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import type { Expense, Category } from '@/lib/definitions';
+import type { Expense } from '@/lib/definitions';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { useDataContext } from '@/context/data-context';
 
 interface RecentExpensesProps {
-  expenses: Expense[];
-  categoryMap: Map<string, Category>;
   onEditExpense: (expense: Expense) => void;
-  onDeleteExpense: (expenseId: string) => void;
 }
 
-export function RecentExpenses({ expenses, categoryMap, onEditExpense, onDeleteExpense }: RecentExpensesProps) {
+export function RecentExpenses({ onEditExpense }: RecentExpensesProps) {
+  const { expenses, categories, deleteExpense } = useDataContext();
   const { toast } = useToast();
+  
+  const categoryMap = React.useMemo(() => {
+    return new Map(categories.map(cat => [cat.id, cat]));
+  }, [categories]);
 
   function handleDelete(expense: Expense) {
-    onDeleteExpense(expense.id);
+    deleteExpense(expense.id);
     toast({
       title: 'Expense Deleted',
       description: `"${expense.description}" has been successfully deleted.`,
