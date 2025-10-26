@@ -65,11 +65,6 @@ export function SpendingOverviewChart() {
     return Object.values(spendingByCategory).sort((a, b) => b.value - a.value);
   }, [filteredExpenses, categoryMap]);
   
-  const totalSpending = React.useMemo(
-    () => spendingData.reduce((sum, item) => sum + item.value, 0),
-    [spendingData]
-  );
-  
   const timeRangeLabels: Record<TimeRange, string> = {
     week: 'this week',
     month: 'this month',
@@ -136,24 +131,6 @@ export function SpendingOverviewChart() {
                             maxHeight: '80px',
                         }}
                     />
-                     <text
-                        x="50%"
-                        y="47%"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="fill-muted-foreground text-xs"
-                      >
-                        Total Spent
-                      </text>
-                      <text
-                        x="50%"
-                        y="57%"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="fill-foreground text-lg font-bold font-mono"
-                      >
-                        Tk {totalSpending.toFixed(2)}
-                      </text>
                 </PieChart>
             ) : (
                 <div className="flex h-full w-full items-center justify-center">
