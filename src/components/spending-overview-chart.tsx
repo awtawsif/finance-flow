@@ -138,19 +138,19 @@ export function SpendingOverviewChart() {
                     />
                      <text
                         x="50%"
-                        y="45%"
+                        y="47%"
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        className="fill-muted-foreground text-sm"
+                        className="fill-muted-foreground text-xs"
                       >
                         Total Spent
                       </text>
                       <text
                         x="50%"
-                        y="55%"
+                        y="57%"
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        className="fill-foreground text-2xl font-bold font-mono"
+                        className="fill-foreground text-lg font-bold font-mono"
                       >
                         Tk {totalSpending.toFixed(2)}
                       </text>
