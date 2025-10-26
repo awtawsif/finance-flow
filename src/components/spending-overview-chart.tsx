@@ -136,16 +136,24 @@ export function SpendingOverviewChart() {
                             maxHeight: '80px',
                         }}
                     />
-                    <foreignObject width="100%" height="100%">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                              <p className="text-sm text-muted-foreground">Total Spent</p>
-                              <p className="text-2xl font-bold font-mono">
-                                  Tk {totalSpending.toFixed(2)}
-                              </p>
-                          </div>
-                      </div>
-                  </foreignObject>
+                     <text
+                        x="50%"
+                        y="45%"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-muted-foreground text-sm"
+                      >
+                        Total Spent
+                      </text>
+                      <text
+                        x="50%"
+                        y="55%"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-foreground text-2xl font-bold font-mono"
+                      >
+                        Tk {totalSpending.toFixed(2)}
+                      </text>
                 </PieChart>
             ) : (
                 <div className="flex h-full w-full items-center justify-center">
