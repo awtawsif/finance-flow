@@ -34,6 +34,7 @@ import { EditEarning } from '@/components/edit-earning';
 import { SpendingOverviewChart } from './spending-overview-chart';
 import { EditCategory } from './edit-category';
 import { useDataContext } from '@/context/data-context';
+import { SpendingSummary } from './spending-summary';
 
 
 export default function Dashboard() {
@@ -152,6 +153,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
           <div className="grid gap-6">
              <RecentExpenses onEditExpense={setExpenseToEdit} />
+             <SpendingSummary />
           </div>
            <div className="grid gap-6">
               <BudgetOverview />
