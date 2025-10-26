@@ -81,7 +81,7 @@ export function SpendingSummary() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between">
+      <CardHeader className="flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle>Spending Breakdown</CardTitle>
           <CardDescription>
