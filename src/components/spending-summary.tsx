@@ -3,6 +3,7 @@
 
 import * as React from "react"
 import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip, Legend } from "recharts"
+import { isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import {
   Card,
   CardContent,
@@ -10,20 +11,42 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Button } from '@/components/ui/button';
 import { useDataContext } from "@/context/data-context"
-import { cn } from "@/lib/utils"
+
+type TimeRange = 'week' | 'month' | 'all';
 
 export function SpendingSummary() {
   const { expenses, categories } = useDataContext();
+  const [timeRange, setTimeRange] = React.useState<TimeRange>('month');
 
   const categoryMap = React.useMemo(() => 
     new Map(categories.map(cat => [cat.id, cat]))
   , [categories]);
 
-  const spendingData = React.useMemo(() => {
+  const filteredExpenses = React.useMemo(() => {
     if (expenses.length === 0) return [];
+    const now = new Date();
+    let interval: Interval;
 
-    const spendingByCategory = expenses.reduce((acc, expense) => {
+    switch (timeRange) {
+      case 'week':
+        interval = { start: startOfWeek(now), end: endOfWeek(now) };
+        break;
+      case 'month':
+        interval = { start: startOfMonth(now), end: endOfMonth(now) };
+        break;
+      case 'all':
+      default:
+        return expenses;
+    }
+    return expenses.filter(expense => isWithinInterval(expense.date, interval));
+  }, [expenses, timeRange]);
+
+  const spendingData = React.useMemo(() => {
+    if (filteredExpenses.length === 0) return [];
+
+    const spendingByCategory = filteredExpenses.reduce((acc, expense) => {
       const category = categoryMap.get(expense.categoryId);
       if (category) {
         acc[category.name] = (acc[category.name] || 0) + expense.amount;
@@ -39,19 +62,40 @@ export function SpendingSummary() {
         fill: category ? category.color : '#8884d8',
       };
     }).sort((a, b) => b.value - a.value); // Sort for consistent color assignment
-  }, [expenses, categories, categoryMap]);
+  }, [filteredExpenses, categories, categoryMap]);
   
   const totalSpending = React.useMemo(() => 
     spendingData.reduce((sum, item) => sum + item.value, 0)
   , [spendingData]);
 
+  const timeRangeLabels: Record<TimeRange, string> = {
+    week: 'this week',
+    month: 'this month',
+    all: 'all time'
+  };
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Spending Summary</CardTitle>
-        <CardDescription>
-          A breakdown of your expenses by category for this month.
-        </CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between">
+        <div>
+          <CardTitle>Spending Summary</CardTitle>
+          <CardDescription>
+            A breakdown of your expenses by category for {timeRangeLabels[timeRange]}.
+          </CardDescription>
+        </div>
+        <div className="flex items-center gap-2">
+          {(['week', 'month', 'all'] as TimeRange[]).map((range) => (
+            <Button
+              key={range}
+              variant={timeRange === range ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimeRange(range)}
+              className="capitalize"
+            >
+              {range}
+            </Button>
+          ))}
+        </div>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={250}>
@@ -111,7 +155,7 @@ export function SpendingSummary() {
             </PieChart>
           ) : (
             <div className="flex h-[250px] w-full items-center justify-center">
-              <p className="text-muted-foreground">No spending data to display.</p>
+              <p className="text-muted-foreground">No spending data for this period.</p>
             </div>
           )}
         </ResponsiveContainer>
