@@ -74,6 +74,8 @@ interface DataContextProps {
   confirmNuke: () => void;
   importedData: any;
   setImportedData: (data: any) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 const DataContext = React.createContext<DataContextProps | undefined>(undefined);
@@ -92,6 +94,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [showImportConfirm, setShowImportConfirm] = React.useState(false);
   const [showNukeConfirm, setShowNukeConfirm] = React.useState(false);
   const [importedData, setImportedData] = React.useState<any>(null);
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   const { toast } = useToast();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -363,6 +366,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     confirmNuke,
     importedData,
     setImportedData,
+    searchQuery,
+    setSearchQuery,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

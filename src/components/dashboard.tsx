@@ -35,6 +35,7 @@ import { SpendingOverviewChart } from './spending-overview-chart';
 import { EditCategory } from './edit-category';
 import { useDataContext } from '@/context/data-context';
 import { SpendingSummary } from './spending-summary';
+import { SearchResults } from './search-results';
 
 
 export default function Dashboard() {
@@ -149,6 +150,8 @@ export default function Dashboard() {
             isPositive={remainingBudget >= 0}
           />
         </div>
+
+        <SearchResults />
 
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
           <div className="grid gap-6">
