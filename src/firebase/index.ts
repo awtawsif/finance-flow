@@ -8,6 +8,13 @@ import { getFirestore } from 'firebase/firestore'
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
   if (!getApps().length) {
+    // When deployed to Vercel, the FIREBASE_CONFIG environment variable is not automatically set.
+    // We need to fallback to the firebaseConfig object.
+    // We can use the VERCEL environment variable to detect this.
+    if (process.env.VERCEL) {
+        return getSdks(initializeApp(firebaseConfig));
+    }
+    
     // Important! initializeApp() is called without any arguments because Firebase App Hosting
     // integrates with the initializeApp() function to provide the environment variables needed to
     // populate the FirebaseOptions in production. It is critical that we attempt to call initializeApp()
