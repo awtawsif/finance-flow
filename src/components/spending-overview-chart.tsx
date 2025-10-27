@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
 import { isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import {
   Card,
@@ -13,16 +13,18 @@ import {
 } from "@/components/ui/card"
 import { Button } from '@/components/ui/button';
 import { useDataContext } from '@/context/data-context';
-import { ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
 type TimeRange = 'week' | 'month' | 'all';
+type ChartView = 'by_category' | 'by_item';
 
 export function SpendingOverviewChart() {
   const { expenses, categories } = useDataContext();
   const [timeRange, setTimeRange] = React.useState<TimeRange>('month');
   const [showAll, setShowAll] = React.useState(false);
+  const [selectedCategory, setSelectedCategory] = React.useState<{id: string, name: string} | null>(null);
   const isMobile = useIsMobile();
 
   const categoryMap = React.useMemo(
@@ -49,14 +51,15 @@ export function SpendingOverviewChart() {
     return expenses.filter(expense => isWithinInterval(expense.date, interval));
   }, [expenses, timeRange]);
 
-  const spendingData = React.useMemo(() => {
+  const spendingByCategory = React.useMemo(() => {
     if (filteredExpenses.length === 0) return [];
 
-    const spendingByCategory = filteredExpenses.reduce((acc, expense) => {
+    const spendingMap = filteredExpenses.reduce((acc, expense) => {
       const category = categoryMap.get(expense.categoryId);
       if (category) {
         if (!acc[category.id]) {
             acc[category.id] = {
+                id: category.id,
                 name: category.name,
                 value: 0,
                 color: category.color,
@@ -65,18 +68,44 @@ export function SpendingOverviewChart() {
         acc[category.id].value += expense.amount;
       }
       return acc;
-    }, {} as Record<string, { name: string; value: number; color: string }>);
+    }, {} as Record<string, { id: string; name: string; value: number; color: string }>);
 
-    return Object.values(spendingByCategory).sort((a, b) => b.value - a.value);
+    return Object.values(spendingMap).sort((a, b) => b.value - a.value);
   }, [filteredExpenses, categoryMap]);
   
+  const spendingByItem = React.useMemo(() => {
+    if (!selectedCategory) return [];
+    
+    const itemsInCategory = filteredExpenses.filter(e => e.categoryId === selectedCategory.id);
+    
+    const spendingMap = itemsInCategory.reduce((acc, expense) => {
+      // Normalize description for better grouping
+      const itemName = expense.description.trim().toLowerCase();
+      if (!acc[itemName]) {
+        acc[itemName] = { name: expense.description, value: 0 };
+      }
+      acc[itemName].value += expense.amount;
+      return acc;
+    }, {} as Record<string, { name: string; value: number }>);
+
+    return Object.values(spendingMap).sort((a, b) => a.value - b.value).slice(-10); // show top 10
+  }, [filteredExpenses, selectedCategory]);
+
   const timeRangeLabels: Record<TimeRange, string> = {
     week: 'this week',
     month: 'this month',
     all: 'all time',
   };
 
-  const visibleData = isMobile && !showAll ? spendingData.slice(0, 4) : spendingData;
+  const handlePieClick = (data: any) => {
+    setSelectedCategory({ id: data.id, name: data.name });
+  };
+  
+  const handleBackClick = () => {
+    setSelectedCategory(null);
+  };
+
+  const visibleData = isMobile && !showAll ? spendingByCategory.slice(0, 4) : spendingByCategory;
 
   const CustomLegend = (props: any) => {
     const { payload } = props;
@@ -91,13 +120,13 @@ export function SpendingOverviewChart() {
                     </li>
                 ))}
             </ul>
-            {isMobile && spendingData.length > 4 && (
+            {isMobile && spendingByCategory.length > 4 && (
                 <Button
                     variant="link"
                     className="mt-2"
                     onClick={() => setShowAll(!showAll)}
                 >
-                    {showAll ? 'Show Less' : `+${spendingData.length - 4} more`}
+                    {showAll ? 'Show Less' : `+${spendingByCategory.length - 4} more`}
                     <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${showAll ? 'rotate-180' : ''}`} />
                 </Button>
             )}
@@ -105,14 +134,26 @@ export function SpendingOverviewChart() {
     );
 };
 
+  const chartTitle = selectedCategory 
+    ? `Top Spending in "${selectedCategory.name}"`
+    : 'Visual Breakdown';
+  
+  const chartDescription = `Breakdown of your expenses for ${timeRangeLabels[timeRange]}.`;
+
   return (
     <Card>
       <CardHeader className="flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <CardTitle>Visual Breakdown</CardTitle>
-          <CardDescription>
-            Visual breakdown of your expenses for {timeRangeLabels[timeRange]}.
-          </CardDescription>
+        <div className="flex items-center gap-2">
+           {selectedCategory && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBackClick}>
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">Back</span>
+            </Button>
+          )}
+          <div>
+            <CardTitle>{chartTitle}</CardTitle>
+            <CardDescription>{chartDescription}</CardDescription>
+          </div>
         </div>
          <div className="flex items-center gap-2">
           {(['week', 'month', 'all'] as TimeRange[]).map((range) => (
@@ -122,6 +163,7 @@ export function SpendingOverviewChart() {
               size="sm"
               onClick={() => setTimeRange(range)}
               className="capitalize"
+              disabled={!!selectedCategory}
             >
               {range}
             </Button>
@@ -129,42 +171,82 @@ export function SpendingOverviewChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
-            {spendingData.length > 0 ? (
-                <PieChart>
-                    <Tooltip
-                        contentStyle={{
-                            background: "hsl(var(--background))",
-                            borderColor: "hsl(var(--border))",
-                            borderRadius: "var(--radius)",
-                        }}
-                        formatter={(value: number) => [`Tk ${value.toFixed(2)}`, 'Spent']}
-                    />
-                    <Pie
-                        data={visibleData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={'80%'}
-                        innerRadius={'60%'}
-                        fill="#8884d8"
-                        dataKey="value"
-                        nameKey="name"
-                        stroke="hsl(var(--background))"
-                        strokeWidth={4}
-                    >
-                        {visibleData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                    </Pie>
-                    <Legend content={<CustomLegend />} />
-                </PieChart>
-            ) : (
+        {selectedCategory ? (
+           <ResponsiveContainer width="100%" height={300}>
+              {spendingByItem.length > 0 ? (
+                <BarChart data={spendingByItem} layout="vertical" margin={{ left: 20, right: 20, top: 5, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" hide />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    width={100}
+                    tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                  />
+                  <Tooltip
+                      contentStyle={{
+                          background: "hsl(var(--background))",
+                          borderColor: "hsl(var(--border))",
+                          borderRadius: "var(--radius)",
+                      }}
+                      formatter={(value: number) => [`Tk ${value.toFixed(2)}`, 'Spent']}
+                      cursor={{fill: 'hsl(var(--accent))', radius: 'var(--radius)'}}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                     {spendingByItem.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill="hsl(var(--primary))" />
+                    ))}
+                  </Bar>
+                </BarChart>
+              ) : (
                 <div className="flex h-full w-full items-center justify-center">
-                    <p className="text-muted-foreground">No spending data for this period.</p>
+                    <p className="text-muted-foreground">No spending data for this category in this period.</p>
                 </div>
-            )}
-        </ResponsiveContainer>
+              )}
+           </ResponsiveContainer>
+        ) : (
+          <ResponsiveContainer width="100%" height={250}>
+              {spendingByCategory.length > 0 ? (
+                  <PieChart>
+                      <Tooltip
+                          contentStyle={{
+                              background: "hsl(var(--background))",
+                              borderColor: "hsl(var(--border))",
+                              borderRadius: "var(--radius)",
+                          }}
+                          formatter={(value: number) => [`Tk ${value.toFixed(2)}`, 'Spent']}
+                      />
+                      <Pie
+                          data={visibleData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={'80%'}
+                          innerRadius={'60%'}
+                          fill="#8884d8"
+                          dataKey="value"
+                          nameKey="name"
+                          stroke="hsl(var(--background))"
+                          strokeWidth={4}
+                          onClick={handlePieClick}
+                      >
+                          {visibleData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} style={{cursor: 'pointer'}} />
+                          ))}
+                      </Pie>
+                      <Legend content={<CustomLegend />} />
+                  </PieChart>
+              ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                      <p className="text-muted-foreground">No spending data for this period.</p>
+                  </div>
+              )}
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )
