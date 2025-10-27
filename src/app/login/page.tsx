@@ -7,6 +7,7 @@ import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PiggyBank } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const GoogleIcon = () => (
     <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -42,6 +43,7 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   const handleSignIn = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -67,12 +69,19 @@ export default function LoginPage() {
                 <PiggyBank className="h-10 w-10 text-primary" />
             </div>
           <CardTitle className="text-2xl">Welcome to FinanceFlow</CardTitle>
-          <CardDescription>Sign in to manage your personal finances.</CardDescription>
+          <CardDescription>Sign in to sync your data across devices or continue as a guest.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-4">
           <Button onClick={handleSignIn} className="w-full">
             <GoogleIcon />
             Sign in with Google
+          </Button>
+          <div className="relative">
+            <Separator />
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">OR</span>
+          </div>
+           <Button variant="secondary" onClick={() => router.push('/')} className="w-full">
+            Continue as Guest
           </Button>
         </CardContent>
       </Card>

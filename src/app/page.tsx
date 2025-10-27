@@ -1,22 +1,13 @@
 'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import Header from '@/components/header';
 import Dashboard from '@/components/dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
+  const { isUserLoading } = useUser();
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
-  if (isUserLoading || !user) {
+  if (isUserLoading) {
     return (
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />

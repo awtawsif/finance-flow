@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { PiggyBank, LogOut } from 'lucide-react';
+import Link from 'next/link';
+import { PiggyBank, LogOut, LogIn } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,7 +21,7 @@ export default function Header() {
   const auth = useAuth();
 
   const handleSignOut = () => {
-    auth.signOut();
+    auth?.signOut();
   };
 
   const getInitials = (name: string | null | undefined) => {
@@ -67,7 +68,14 @@ export default function Header() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : null}
+        ) : (
+          <Button asChild variant="outline">
+            <Link href="/login">
+              <LogIn className="mr-2 h-4 w-4" />
+              Sign In
+            </Link>
+          </Button>
+        )}
       </div>
     </header>
   );
