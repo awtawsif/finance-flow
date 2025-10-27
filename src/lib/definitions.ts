@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
 
 export type Category = {
   id: string;
@@ -7,6 +8,8 @@ export type Category = {
   color: string;
 };
 
+// For Firestore, we often deal with Timestamps
+export type Expense_DB = Omit<Expense, 'date' | 'id'> & { date: Timestamp };
 export type Expense = {
   id: string;
   description: string;
@@ -15,6 +18,7 @@ export type Expense = {
   date: Date;
 };
 
+export type Earning_DB = Omit<Earning, 'date' | 'id'> & { date: Timestamp };
 export type Earning = {
   id: string;
   description: string;

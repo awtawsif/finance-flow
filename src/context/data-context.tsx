@@ -1,43 +1,34 @@
 'use client';
-
-import * as React from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { collection, doc, setDoc, deleteDoc, serverTimestamp, query, orderBy, onSnapshot, writeBatch } from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
 import { Shapes } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { initialCategories } from '@/lib/data';
+import { initialCategories as defaultCategories } from '@/lib/data';
 import type { Expense, Category, Earning } from '@/lib/definitions';
+import {
+  setDocumentNonBlocking,
+  addDocumentNonBlocking,
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking,
+} from '@/firebase/non-blocking-updates';
+import { Timestamp } from 'firebase/firestore';
 
-// Helper to get data from localStorage
-function getFromLocalStorage<T>(key: string, defaultValue: T): T {
-  if (typeof window === 'undefined') {
-    return defaultValue;
-  }
-  const storedValue = localStorage.getItem(key);
-  if (storedValue) {
-    try {
-      return JSON.parse(storedValue, (k, v) => {
-        // Reviver function to convert date strings back to Date objects
-        if (k === 'date' && typeof v === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(v)) {
-          return new Date(v);
-        }
-        return v;
-      });
-    } catch (error) {
-      console.error(`Error parsing localStorage key "${key}":`, error);
-      return defaultValue;
-    }
-  }
-  return defaultValue;
+function restoreCategoryIcons(storedCategories: Omit<Category, 'icon'>[]): Category[] {
+    const initialCategoryMap = new Map(defaultCategories.map(cat => [cat.id, cat.icon]));
+    return storedCategories.map(cat => {
+        return {
+          ...cat,
+          icon: initialCategoryMap.get(cat.id) || Shapes,
+        };
+    });
 }
 
-// Helper to restore icon functions to categories loaded from localStorage
-function restoreCategoryIcons(storedCategories: Omit<Category, 'icon'>[]): Category[] {
-  const initialCategoryMap = new Map(initialCategories.map(cat => [cat.id, cat.icon]));
-  return storedCategories.map(cat => {
-      return {
-        ...cat,
-        icon: initialCategoryMap.get(cat.id) || Shapes,
-      };
-  });
+function processFirestoreTimestamp(item: any) {
+  if (item.date && item.date instanceof Timestamp) {
+    return { ...item, date: item.date.toDate() };
+  }
+  return item;
 }
 
 interface DataContextProps {
@@ -78,145 +69,200 @@ interface DataContextProps {
   setSearchQuery: (query: string) => void;
 }
 
-const DataContext = React.createContext<DataContextProps | undefined>(undefined);
+const DataContext = createContext<DataContextProps | undefined>(undefined);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [isClient, setIsClient] = React.useState(false);
-
-  const [expenses, setExpenses] = React.useState<Expense[]>([]);
-  const [earnings, setEarnings] = React.useState<Earning[]>([]);
-  const [categories, setCategories] = React.useState<Category[]>(initialCategories);
-  const [budgets, setBudgets] = React.useState<Record<string, number>>({});
+  const [isClient, setIsClient] = useState(false);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [earnings, setEarnings] = useState<Earning[]>([]);
+  const [categories, setCategories] = useState<Category[]>(defaultCategories);
+  const [budgets, setBudgets] = useState<Record<string, number>>({});
   
-  const [expenseToEdit, setExpenseToEdit] = React.useState<Expense | null>(null);
-  const [earningToEdit, setEarningToEdit] = React.useState<Earning | null>(null);
-  const [categoryToEdit, setCategoryToEdit] = React.useState<Category | null>(null);
-  const [showImportConfirm, setShowImportConfirm] = React.useState(false);
-  const [showNukeConfirm, setShowNukeConfirm] = React.useState(false);
-  const [importedData, setImportedData] = React.useState<any>(null);
-  const [searchQuery, setSearchQuery] = React.useState('');
+  const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
+  const [earningToEdit, setEarningToEdit] = useState<Earning | null>(null);
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [showNukeConfirm, setShowNukeConfirm] = useState(false);
+  const [importedData, setImportedData] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { toast } = useToast();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { firestore, user } = useFirebase();
+  const userId = user?.uid;
 
-  // Load data from localStorage on initial client-side render
-  React.useEffect(() => {
-    setExpenses(getFromLocalStorage<Expense[]>('expenses', []));
-    setEarnings(getFromLocalStorage<Earning[]>('earnings', []));
-    
-    const storedCategories = restoreCategoryIcons(getFromLocalStorage<Omit<Category, 'icon'>[]>('categories', initialCategories.map(({ icon, ...rest }) => rest)));
-    setCategories(storedCategories);
-
-    setBudgets(getFromLocalStorage<Record<string, number>>('budgets', {}));
+  useEffect(() => {
     setIsClient(true);
   }, []);
 
-  
-  // Persist state to localStorage whenever it changes
-  React.useEffect(() => {
-    if (!isClient) return;
-    localStorage.setItem('expenses', JSON.stringify(expenses));
-  }, [expenses, isClient]);
+  const expensesRef = useMemo(() => userId ? collection(firestore, 'users', userId, 'expenses') : null, [firestore, userId]);
+  const earningsRef = useMemo(() => userId ? collection(firestore, 'users', userId, 'earnings') : null, [firestore, userId]);
+  const categoriesRef = useMemo(() => userId ? collection(firestore, 'users', userId, 'categories') : null, [firestore, userId]);
+  const budgetsRef = useMemo(() => userId ? collection(firestore, 'users', userId, 'budgets') : null, [firestore, userId]);
 
-  React.useEffect(() => {
-    if (!isClient) return;
-    localStorage.setItem('earnings', JSON.stringify(earnings));
-  }, [earnings, isClient]);
-  
-  React.useEffect(() => {
-    if (!isClient) return;
-    const serializableCategories = categories.map(({ icon, ...rest }) => rest);
-    localStorage.setItem('categories', JSON.stringify(serializableCategories));
-
-  }, [categories, isClient]);
-  
-  React.useEffect(() => {
-    if (!isClient) return;
-    localStorage.setItem('budgets', JSON.stringify(budgets));
-  }, [budgets, isClient]);
-
-  const addExpense = React.useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
-    const newExpense: Expense = {
-      ...newExpenseData,
-      id: `exp-${Date.now()}`,
-      date: new Date(),
-    };
-    setExpenses((prev) => [newExpense, ...prev]);
-  }, []);
-  
-  const updateExpense = React.useCallback((updatedExpense: Expense) => {
-    setExpenses((prev) => 
-      prev.map((expense) => 
-        expense.id === updatedExpense.id ? updatedExpense : expense
-      )
-    );
-    setExpenseToEdit(null);
-  }, []);
-
-  const deleteExpense = React.useCallback((expenseId: string) => {
-    setExpenses((prev) => prev.filter((expense) => expense.id !== expenseId));
-  }, []);
-
-  const addEarning = React.useCallback((newEarningData: Omit<Earning, 'id' | 'date'>) => {
-    const newEarning: Earning = {
-      ...newEarningData,
-      id: `earn-${Date.now()}`,
-      date: new Date(),
-    };
-    setEarnings((prev) => [newEarning, ...prev]);
-  }, []);
-  
-  const updateEarning = React.useCallback((updatedEarning: Earning) => {
-    setEarnings((prev) => 
-      prev.map((earning) => 
-        earning.id === updatedEarning.id ? updatedEarning : earning
-      )
-    );
-    setEarningToEdit(null);
-  }, []);
-
-  const deleteEarning = React.useCallback((earningId: string) => {
-    setEarnings((prev) => prev.filter((earning) => earning.id !== earningId));
-  }, []);
-  
-  const setBudget = React.useCallback((categoryId: string, limit: number) => {
-    setBudgets((prev) => ({ ...prev, [categoryId]: limit }));
-  }, []);
-
-  const addCategory = React.useCallback((categoryData: { name: string; color: string }) => {
-    const newCategory: Category = {
-      id: `cat-${Date.now()}`,
-      name: categoryData.name,
-      icon: Shapes,
-      color: categoryData.color,
-    };
-    setCategories((prev) => [...prev, newCategory]);
-  }, []);
-  
-  const updateCategory = React.useCallback((updatedCategory: Category) => {
-    setCategories((prev) => 
-      prev.map((category) => 
-        category.id === updatedCategory.id ? updatedCategory : category
-      )
-    );
-    setCategoryToEdit(null);
-  }, []);
-
-  const deleteCategory = React.useCallback((categoryId: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
-    setBudgets((prev) => {
-      const newBudgets = { ...prev };
-      delete newBudgets[categoryId];
-      return newBudgets;
+  useEffect(() => {
+    if (!expensesRef) return;
+    const q = query(expensesRef, orderBy('date', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const expensesData = snapshot.docs.map(doc => ({ id: doc.id, ...processFirestoreTimestamp(doc.data()) } as Expense));
+      setExpenses(expensesData);
     });
-    setExpenses((prev) => prev.filter((e) => e.categoryId !== categoryId));
-  }, []);
+    return () => unsubscribe();
+  }, [expensesRef]);
+
+  useEffect(() => {
+    if (!earningsRef) return;
+    const q = query(earningsRef, orderBy('date', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const earningsData = snapshot.docs.map(doc => ({ id: doc.id, ...processFirestoreTimestamp(doc.data()) } as Earning));
+      setEarnings(earningsData);
+    });
+    return () => unsubscribe();
+  }, [earningsRef]);
+
+  useEffect(() => {
+    if (!categoriesRef) return;
+    const unsubscribe = onSnapshot(categoriesRef, (snapshot) => {
+      if (snapshot.empty) {
+        // If no categories in Firestore, populate with default ones
+        const batch = writeBatch(firestore);
+        defaultCategories.forEach(category => {
+          const { icon, ...serializableCategory } = category;
+          const docRef = doc(categoriesRef, category.id);
+          batch.set(docRef, serializableCategory);
+        });
+        batch.commit();
+      } else {
+        const categoriesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Omit<Category, 'icon'>));
+        setCategories(restoreCategoryIcons(categoriesData));
+      }
+    });
+    return () => unsubscribe();
+  }, [categoriesRef, firestore]);
+  
+  useEffect(() => {
+    if (!budgetsRef) return;
+    const unsubscribe = onSnapshot(budgetsRef, (snapshot) => {
+      const budgetsData = snapshot.docs.reduce((acc, doc) => {
+        acc[doc.id] = doc.data().limit;
+        return acc;
+      }, {} as Record<string, number>);
+      setBudgets(budgetsData);
+    });
+    return () => unsubscribe();
+  }, [budgetsRef]);
+
+
+  const addExpense = useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
+    if (!expensesRef) return;
+    const data = {
+      ...newExpenseData,
+      date: serverTimestamp(),
+    };
+    addDocumentNonBlocking(expensesRef, data);
+  }, [expensesRef]);
+
+  const updateExpense = useCallback((updatedExpense: Expense) => {
+    if (!expensesRef) return;
+    const docRef = doc(expensesRef, updatedExpense.id);
+    const { id, ...data } = updatedExpense;
+    updateDocumentNonBlocking(docRef, data);
+    setExpenseToEdit(null);
+  }, [expensesRef]);
+
+  const deleteExpense = useCallback((expenseId: string) => {
+    if (!expensesRef) return;
+    const docRef = doc(expensesRef, expenseId);
+    deleteDocumentNonBlocking(docRef);
+  }, [expensesRef]);
+
+
+  const addEarning = useCallback((newEarningData: Omit<Earning, 'id'|'date'>) => {
+    if (!earningsRef) return;
+    const data = {
+      ...newEarningData,
+      date: serverTimestamp(),
+    };
+    addDocumentNonBlocking(earningsRef, data);
+  }, [earningsRef]);
+
+  const updateEarning = useCallback((updatedEarning: Earning) => {
+    if (!earningsRef) return;
+    const docRef = doc(earningsRef, updatedEarning.id);
+    const { id, ...data } = updatedEarning;
+    updateDocumentNonBlocking(docRef, data);
+    setEarningToEdit(null);
+  }, [earningsRef]);
+
+  const deleteEarning = useCallback((earningId: string) => {
+    if (!earningsRef) return;
+    const docRef = doc(earningsRef, earningId);
+    deleteDocumentNonBlocking(docRef);
+  }, [earningsRef]);
+
+  
+  const setBudget = useCallback((categoryId: string, limit: number) => {
+    if (!budgetsRef) return;
+    const docRef = doc(budgetsRef, categoryId);
+    setDocumentNonBlocking(docRef, { limit }, { merge: true });
+  }, [budgetsRef]);
+
+
+  const addCategory = useCallback((categoryData: { name: string; color: string }) => {
+    if (!categoriesRef) return;
+    addDocumentNonBlocking(categoriesRef, categoryData);
+  }, [categoriesRef]);
+
+  const updateCategory = useCallback((updatedCategory: Category) => {
+    if (!categoriesRef) return;
+    const docRef = doc(categoriesRef, updatedCategory.id);
+    const { id, icon, ...data } = updatedCategory;
+    updateDocumentNonBlocking(docRef, data);
+    setCategoryToEdit(null);
+  }, [categoriesRef]);
+
+  const deleteCategory = useCallback(async (categoryId: string) => {
+    if (!userId || !firestore) return;
+    const categoryDocRef = doc(firestore, 'users', userId, 'categories', categoryId);
+    const budgetDocRef = doc(firestore, 'users', userId, 'budgets', categoryId);
+
+    // This is a complex operation (query + multiple deletes), better to handle with care and possibly a backend function in a real app.
+    // For client-side, we'll do our best.
+    const expensesToDeleteQuery = query(collection(firestore, 'users', userId, 'expenses'), where => where("categoryId", "==", categoryId));
+    
+    try {
+        const batch = writeBatch(firestore);
+        
+        // Delete the category and budget
+        batch.delete(categoryDocRef);
+        batch.delete(budgetDocRef);
+
+        // Delete associated expenses
+        const expenseSnapshot = await getDocs(expensesToDeleteQuery);
+        expenseSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+
+    } catch (error) {
+        console.error("Error deleting category and associated data: ", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not delete category and its expenses."
+        });
+    }
+
+  }, [userId, firestore, toast]);
+
 
   const handleExportData = () => {
     const dataToExport = {
       expenses,
       earnings,
-      categories: categories.map(({ icon, ...rest }) => rest), // Don't export icons
+      categories: categories.map(({ icon, ...rest }) => rest),
       budgets,
     };
     const dataStr = JSON.stringify(dataToExport, null, 2);
@@ -247,7 +293,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (typeof text !== 'string') throw new Error("File is not valid text");
         const parsedData = JSON.parse(text);
 
-        // Basic validation
         if (parsedData.expenses && parsedData.categories && parsedData.budgets) {
           setImportedData(parsedData);
           setShowImportConfirm(true);
@@ -262,7 +307,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           description: error instanceof Error ? error.message : 'Could not read or parse the file.',
         });
       } finally {
-        // Reset file input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -271,66 +315,85 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     reader.readAsText(file);
   };
   
-  const confirmImport = () => {
-    if (!importedData) return;
+  const confirmImport = async () => {
+    if (!importedData || !userId || !firestore) return;
+  
+    try {
+      const batch = writeBatch(firestore);
+  
+      // Set Categories
+      const importedCategories = importedData.categories;
+      importedCategories.forEach((cat: any) => {
+        const catRef = doc(firestore, 'users', userId, 'categories', cat.id);
+        batch.set(catRef, cat);
+      });
+  
+      // Set Expenses
+      importedData.expenses.forEach((exp: any) => {
+        const expRef = doc(firestore, 'users', userId, 'expenses', exp.id);
+        batch.set(expRef, { ...exp, date: new Date(exp.date) });
+      });
+  
+      // Set Earnings
+      const earningsToImport = importedData.earnings || [];
+      earningsToImport.forEach((earn: any) => {
+        const earnRef = doc(firestore, 'users', userId, 'earnings', earn.id);
+        batch.set(earnRef, { ...earn, date: new Date(earn.date) });
+      });
 
-    // --- BACKWARD COMPATIBILITY LOGIC ---
-    let importedEarnings = [];
-    if (importedData.earnings) {
-      // New format: has earnings array
-      importedEarnings = importedData.earnings.map((earn: any) => ({
-        ...earn,
-        date: new Date(earn.date),
-      }));
-    } else if (importedData.overallBudget) {
-      // Old format: has overallBudget, convert it to a single earning
-      importedEarnings = [{
-        id: `earn-${Date.now()}`,
-        description: 'Imported Budget',
-        amount: importedData.overallBudget,
-        date: new Date(),
-      }];
+      // Set Budgets
+      Object.entries(importedData.budgets).forEach(([catId, limit]) => {
+        const budgetRef = doc(firestore, 'users', userId, 'budgets', catId);
+        batch.set(budgetRef, { limit });
+      });
+  
+      await batch.commit();
+  
+      toast({ title: 'Import Successful', description: 'Your data has been restored.' });
+    } catch (error) {
+      console.error('Batch import failed:', error);
+      toast({ variant: 'destructive', title: 'Import Failed', description: 'Could not write data to the database.' });
+    } finally {
+      setShowImportConfirm(false);
+      setImportedData(null);
     }
-  
-    // This reviver is needed because JSON.parse in getFromLocalStorage won't run here
-    const parsedExpenses = importedData.expenses.map((exp: any) => ({
-        ...exp,
-        date: new Date(exp.date),
-    }));
-
-    const restoredCategories = restoreCategoryIcons(importedData.categories);
-  
-    setExpenses(parsedExpenses);
-    setEarnings(importedEarnings);
-    setCategories(restoredCategories);
-    setBudgets(importedData.budgets);
-  
-    toast({ title: 'Import Successful', description: 'Your data has been restored.' });
-    setShowImportConfirm(false);
-    setImportedData(null);
   };
   
-  const confirmNuke = () => {
-    // Clear state
-    setExpenses([]);
-    setEarnings([]);
-    setCategories(initialCategories);
-    setBudgets({});
-    
-    // Clear localStorage
-    localStorage.removeItem('expenses');
-    localStorage.removeItem('earnings');
-    localStorage.removeItem('categories');
-    localStorage.removeItem('standardizedCategories');
-    localStorage.removeItem('budgets');
-
-    toast({
-      variant: 'destructive',
-      title: 'Data Cleared',
-      description: 'All your data has been permanently deleted.',
-    });
-    setShowNukeConfirm(false);
+  const confirmNuke = async () => {
+    if (!userId || !firestore) return;
+  
+    const collections = ['expenses', 'earnings', 'categories', 'budgets'];
+  
+    try {
+      const batch = writeBatch(firestore);
+  
+      for (const collectionName of collections) {
+        const colRef = collection(firestore, 'users', userId, collectionName);
+        const snapshot = await getDocs(query(colRef));
+        snapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+      }
+  
+      await batch.commit();
+  
+      toast({
+        variant: 'destructive',
+        title: 'Data Cleared',
+        description: 'All your cloud data has been permanently deleted.',
+      });
+    } catch (error) {
+      console.error('Error clearing all data:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to clear all data.',
+      });
+    } finally {
+      setShowNukeConfirm(false);
+    }
   };
+  
 
   const value = {
     isClient,
@@ -374,7 +437,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useDataContext() {
-  const context = React.useContext(DataContext);
+  const context = useContext(DataContext);
   if (context === undefined) {
     throw new Error('useDataContext must be used within a DataProvider');
   }
