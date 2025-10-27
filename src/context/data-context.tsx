@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { collection, doc, setDoc, deleteDoc, serverTimestamp, query, orderBy, onSnapshot, writeBatch, getDocs, where, getDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
-import { Shapes } from 'lucide-react';
+import { Shapes, Ellipsis } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { initialCategories as defaultCategories } from '@/lib/data';
 import type { Expense, Category, Earning } from '@/lib/definitions';
@@ -288,16 +288,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       try {
         const batch = writeBatch(firestore);
+        
+        // Delete the category document
         batch.delete(categoryDocRef);
-        batch.delete(budgetDocRef);
+        
+        // Check if the budget document exists before trying to delete it
+        const budgetDocSnap = await getDoc(budgetDocRef);
+        if (budgetDocSnap.exists()) {
+          batch.delete(budgetDocRef);
+        }
+        
+        // Find and delete all expenses associated with the category
         const expenseSnapshot = await getDocs(expensesToDeleteQuery);
         expenseSnapshot.forEach(doc => batch.delete(doc.ref));
+        
         await batch.commit();
       } catch (error) {
         console.error("Error deleting category and associated data: ", error);
         toast({ variant: "destructive", title: "Error", description: "Could not delete category." });
       }
     } else {
+      // Local data deletion
       setCategories(prev => prev.filter(c => c.id !== categoryId));
       setExpenses(prev => prev.filter(e => e.categoryId !== categoryId));
       setBudgets(prev => {
