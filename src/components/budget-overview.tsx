@@ -78,6 +78,14 @@ export function BudgetOverview() {
       return acc;
     }, {} as Record<string, number>);
   }, [expenses]);
+  
+  const sortedCategories = React.useMemo(() => {
+    return [...categories].sort((a, b) => {
+      const spendingA = spendingByCategory[a.id] || 0;
+      const spendingB = spendingByCategory[b.id] || 0;
+      return spendingB - spendingA;
+    });
+  }, [categories, spendingByCategory]);
 
   React.useEffect(() => {
     if (selectedCategory) {
@@ -131,7 +139,7 @@ export function BudgetOverview() {
           </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {categories.map((category) => {
+            {sortedCategories.map((category) => {
               const spent = spendingByCategory[category.id] || 0;
               const budget = budgets[category.id] || 0;
               const isOverBudget = budget > 0 && spent > budget;
