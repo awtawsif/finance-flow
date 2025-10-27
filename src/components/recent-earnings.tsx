@@ -67,7 +67,7 @@ export function RecentEarnings({ onEditEarning }: RecentEarningsProps) {
         <CardTitle>Recent Earnings</CardTitle>
         <CardDescription>Your latest income.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[500px] overflow-y-auto">
         <Accordion type="multiple" defaultValue={sortedDates.slice(0, 2)}>
           {sortedDates.map((date) => {
              const dailyTotal = groupedEarnings[date].reduce((sum, earning) => sum + earning.amount, 0);

@@ -71,7 +71,7 @@ export function RecentExpenses({ onEditExpense }: RecentExpensesProps) {
         <CardTitle>Recent Expenses</CardTitle>
         <CardDescription>Your latest transactions.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[500px] overflow-y-auto">
         <Accordion type="multiple" defaultValue={sortedDates.slice(0, 2)}>
           {sortedDates.map((date) => {
             const dailyTotal = groupedExpenses[date].reduce((sum, expense) => sum + expense.amount, 0);
