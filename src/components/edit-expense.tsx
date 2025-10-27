@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -34,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/definitions';
 import { useDataContext } from '@/context/data-context';
 import { DatePicker } from './date-picker';
+import { getIcon } from '@/lib/icons';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -122,14 +124,17 @@ export function EditExpense({ expense, onClose }: EditExpenseProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center">
-                            <category.icon className="mr-2 h-4 w-4" />
-                            {category.name}
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {categories.map((category) => {
+                        const Icon = getIcon(category.icon);
+                        return (
+                          <SelectItem key={category.id} value={category.id}>
+                            <div className="flex items-center">
+                              <Icon className="mr-2 h-4 w-4" />
+                              {category.name}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                   <FormMessage />

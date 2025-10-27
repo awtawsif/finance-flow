@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -23,6 +24,7 @@ import { useDataContext } from '@/context/data-context';
 import type { Expense } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { getIcon } from '@/lib/icons';
 
 export function SearchResults() {
   const { 
@@ -104,6 +106,7 @@ export function SearchResults() {
                 <TableBody>
                   {filteredExpenses.map((expense) => {
                     const category = categoryMap.get(expense.categoryId);
+                    const Icon = getIcon(category?.icon);
                     return (
                       <TableRow key={expense.id} className="group">
                         <TableCell className="font-medium">{expense.description}</TableCell>
@@ -113,7 +116,7 @@ export function SearchResults() {
                         <TableCell className="hidden md:table-cell">
                           {category && (
                             <Badge variant="outline" className="flex w-fit items-center gap-2">
-                              {category.icon && <category.icon className="h-4 w-4" style={{ color: category.color }} />}
+                              <Icon className="h-4 w-4" style={{ color: category.color }} />
                               {category.name}
                             </Badge>
                           )}

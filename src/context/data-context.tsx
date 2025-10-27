@@ -1,8 +1,8 @@
+
 'use client';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { collection, doc, setDoc, deleteDoc, serverTimestamp, query, orderBy, onSnapshot, writeBatch, getDocs, where, getDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
-import { Shapes, Ellipsis } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { initialCategories as defaultCategories } from '@/lib/data';
 import type { Expense, Category, Earning } from '@/lib/definitions';
@@ -14,13 +14,15 @@ import {
 } from '@/firebase/non-blocking-updates';
 import { Timestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { getIcon } from '@/lib/icons';
 
 function restoreCategoryIcons(storedCategories: Omit<Category, 'icon'>[]): Category[] {
     const initialCategoryMap = new Map(defaultCategories.map(cat => [cat.id, cat.icon]));
     return storedCategories.map(cat => {
+        const iconName = (cat as any).iconName || cat.icon || initialCategoryMap.get(cat.id);
         return {
           ...cat,
-          icon: initialCategoryMap.get(cat.id) || Shapes,
+          icon: iconName || 'Shapes',
         };
     });
 }
@@ -48,7 +50,7 @@ interface DataContextProps {
   addEarning: (earning: Omit<Earning, 'id' | 'date'>) => void;
   updateEarning: (earning: Earning) => void;
   deleteEarning: (id: string) => void;
-  addCategory: (category: { name: string, color: string }) => void;
+  addCategory: (category: Omit<Category, 'id'>) => void;
   updateCategory: (category: Category) => void;
   deleteCategory: (id: string) => void;
   setBudget: (categoryId: string, limit: number) => void;
@@ -127,7 +129,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (isClient && !userId) {
       localStorage.setItem('expenses', JSON.stringify(expenses));
       localStorage.setItem('earnings', JSON.stringify(earnings));
-      localStorage.setItem('categories', JSON.stringify(categories.map(({ icon, ...rest }) => rest)));
+      localStorage.setItem('categories', JSON.stringify(categories));
       localStorage.setItem('budgets', JSON.stringify(budgets));
     }
   }, [expenses, earnings, categories, budgets, isClient, userId]);
@@ -166,13 +168,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (snapshot.empty) {
         const batch = writeBatch(firestore);
         defaultCategories.forEach(category => {
-          const { icon, ...serializableCategory } = category;
           const docRef = doc(categoriesRef, category.id);
-          batch.set(docRef, serializableCategory);
+          batch.set(docRef, category);
         });
         await batch.commit();
       } else {
-        const categoriesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Omit<Category, 'icon'>));
+        const categoriesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
         setCategories(restoreCategoryIcons(categoriesData));
       }
     }, (error) => console.error("Categories snapshot error: ", error));
@@ -260,11 +261,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [budgetsRef]);
 
-  const addCategory = useCallback((categoryData: { name: string; color: string }) => {
+  const addCategory = useCallback((categoryData: Omit<Category, 'id'>) => {
     if (categoriesRef) {
       addDocumentNonBlocking(categoriesRef, categoryData);
     } else {
-      const newCategory = { ...categoryData, id: uuidv4(), icon: Ellipsis };
+      const newCategory = { ...categoryData, id: uuidv4() };
       setCategories(prev => [...prev, newCategory]);
     }
   }, [categoriesRef]);
@@ -272,7 +273,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateCategory = useCallback((updatedCategory: Category) => {
     if (categoriesRef) {
       const docRef = doc(categoriesRef, updatedCategory.id);
-      const { id, icon, ...data } = updatedCategory;
+      const { id, ...data } = updatedCategory;
       updateDocumentNonBlocking(docRef, data);
     } else {
       setCategories(prev => prev.map(c => c.id === updatedCategory.id ? updatedCategory : c));
@@ -323,7 +324,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const dataToExport = {
       expenses,
       earnings,
-      categories: categories.map(({ icon, ...rest }) => rest),
+      categories,
       budgets,
     };
     const dataStr = JSON.stringify(dataToExport, null, 2);

@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { useDataContext } from '@/context/data-context';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { getIcon } from '@/lib/icons';
+import type { LucideIcon } from 'lucide-react';
 
 type TimeRange = 'week' | 'month' | 'all';
 
@@ -63,7 +65,7 @@ export function SpendingSummary() {
         acc[category.id].value += expense.amount;
       }
       return acc;
-    }, {} as Record<string, { name: string; value: number; color: string, icon: React.ElementType }>);
+    }, {} as Record<string, { name: string; value: number; color: string, icon: string }>);
 
     return Object.values(spendingByCategory).sort((a, b) => b.value - a.value);
   }, [filteredExpenses, categories, categoryMap]);
@@ -105,13 +107,16 @@ export function SpendingSummary() {
       <CardContent>
         {spendingData.length > 0 ? (
           <div className="space-y-4">
-            {spendingData.map((item) => (
-              <div key={item.name} className="flex items-center">
-                <item.icon className="mr-3 h-5 w-5 flex-shrink-0" style={{color: item.color}} />
-                <span className="flex-1 truncate font-medium">{item.name}</span>
-                <span className="font-mono font-semibold">Tk {item.value.toFixed(2)}</span>
-              </div>
-            ))}
+            {spendingData.map((item) => {
+                const Icon = getIcon(item.icon);
+                return (
+                  <div key={item.name} className="flex items-center">
+                    <Icon className="mr-3 h-5 w-5 flex-shrink-0" style={{color: item.color}} />
+                    <span className="flex-1 truncate font-medium">{item.name}</span>
+                    <span className="font-mono font-semibold">Tk {item.value.toFixed(2)}</span>
+                  </div>
+                );
+            })}
           </div>
         ) : (
           <div className="flex h-[150px] items-center justify-center">

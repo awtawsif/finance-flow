@@ -4,7 +4,7 @@ import { Timestamp } from 'firebase/firestore';
 export type Category = {
   id: string;
   name: string;
-  icon: LucideIcon;
+  icon: string; // Icon name as a string
   color: string;
 };
 

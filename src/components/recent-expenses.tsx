@@ -28,6 +28,7 @@ import type { Expense } from '@/lib/definitions';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useDataContext } from '@/context/data-context';
+import { getIcon } from '@/lib/icons';
 
 interface RecentExpensesProps {
   onEditExpense: (expense: Expense) => void;
@@ -98,13 +99,14 @@ export function RecentExpenses({ onEditExpense }: RecentExpensesProps) {
                   <TableBody>
                     {groupedExpenses[date].map((expense) => {
                       const category = categoryMap.get(expense.categoryId);
+                      const Icon = getIcon(category?.icon);
                       return (
                         <TableRow key={expense.id} className="group">
                           <TableCell className="font-medium">{expense.description}</TableCell>
                           <TableCell className="hidden md:table-cell">
                             {category && (
                               <Badge variant="outline" className="flex w-fit items-center gap-2">
-                                <category.icon className="h-4 w-4" style={{ color: category.color }} />
+                                <Icon className="h-4 w-4" style={{ color: category.color }} />
                                 {category.name}
                               </Badge>
                             )}

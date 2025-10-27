@@ -48,6 +48,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Category } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 import { useDataContext } from '@/context/data-context';
+import { getIcon } from '@/lib/icons';
 
 const formSchema = z.object({
   limit: z.coerce.number().positive({ message: 'Budget must be a positive number.' }),
@@ -144,11 +145,12 @@ export function BudgetOverview() {
               const budget = budgets[category.id] || 0;
               const isOverBudget = budget > 0 && spent > budget;
               const progress = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
+              const Icon = getIcon(category.icon);
 
               return (
               <div key={category.id} className="group flex items-center gap-4">
                 <div className="hidden h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg sm:flex" style={{ backgroundColor: `${category.color}20` }}>
-                  <category.icon className="h-6 w-6" style={{ color: category.color }}/>
+                  <Icon className="h-6 w-6" style={{ color: category.color }}/>
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between">

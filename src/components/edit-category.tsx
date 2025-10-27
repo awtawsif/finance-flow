@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -26,10 +27,12 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Category } from '@/lib/definitions';
 import { useDataContext } from '@/context/data-context';
+import { IconPicker } from './icon-picker';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Category name must be at least 2 characters.' }),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: 'Please enter a valid hex color.' }),
+  icon: z.string().nonempty({ message: 'Please select an icon.' }),
 });
 
 type EditCategoryFormValues = z.infer<typeof formSchema>;
@@ -48,6 +51,7 @@ export function EditCategory({ category, onClose }: EditCategoryProps) {
     defaultValues: {
       name: category.name,
       color: category.color,
+      icon: category.icon,
     },
   });
 
@@ -79,6 +83,19 @@ export function EditCategory({ category, onClose }: EditCategoryProps) {
                   <FormLabel>Category Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Subscriptions" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="icon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Icon</FormLabel>
+                  <FormControl>
+                    <IconPicker value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
