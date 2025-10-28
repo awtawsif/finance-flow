@@ -228,6 +228,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const addEarning = useCallback((newEarningData: Omit<Earning, 'id'|'date'>) => {
     const newId = uuidv4();
     const optimisticEarning = { ...newEarningData, id: newId, date: new Date() };
+
     if (earningsRef) {
       setEarnings(prev => [optimisticEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
 
@@ -270,11 +271,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const addCategory = useCallback((categoryData: Omit<Category, 'id'>) => {
     const newId = uuidv4();
-    const newCategory = { ...categoryData, id: newId };
     if (categoriesRef) {
         const docRef = doc(categoriesRef, newId);
         setDocumentNonBlocking(docRef, categoryData, {});
     } else {
+      const newCategory = { ...categoryData, id: newId };
       setCategories(prev => [...prev, newCategory]);
     }
   }, [categoriesRef]);
