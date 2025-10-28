@@ -5,7 +5,8 @@ import * as React from 'react';
 import {
   isWithinInterval,
   startOfMonth, endOfMonth, subMonths, format,
-  startOfYear, endOfYear, subYears, getYear
+  startOfYear, endOfYear, subYears, getYear,
+  startOfWeek, endOfWeek, subWeeks,
 } from 'date-fns';
 import {
   Select,
@@ -17,7 +18,17 @@ import {
 import { useDataContext } from '@/context/data-context';
 import type { Expense } from '@/lib/definitions';
 
-type Timeframe = 'month' | 'year' | 'all';
+type Timeframe = 'week' | 'month' | 'year' | 'all';
+
+// Generate recent weeks for the dropdown
+const recentWeeks = Array.from({ length: 12 }, (_, i) => {
+  const date = subWeeks(new Date(), i);
+  const start = startOfWeek(date);
+  return {
+    value: format(start, 'yyyy-MM-dd'),
+    label: `Week of ${format(start, 'MMM d')}`,
+  };
+});
 
 // Generate recent months for the dropdown
 const recentMonths = Array.from({ length: 12 }, (_, i) => {
@@ -67,12 +78,18 @@ export function DateFilterProvider({ children }: { children: React.ReactNode }) 
   const [period, setPeriod] = React.useState(recentMonths[0].value);
 
   const { periodOptions, filteredExpenses, filterLabel } = React.useMemo(() => {
-    const now = new Date();
     let options: { value: string, label: string }[] = [];
     let label = 'all time';
     let filtered: Expense[] = expenses;
 
     switch (timeframe) {
+      case 'week':
+        options = recentWeeks;
+        const selectedWeekStart = new Date(period);
+        label = `the week of ${format(selectedWeekStart, 'MMM d, yyyy')}`;
+        const weekInterval = { start: startOfWeek(selectedWeekStart), end: endOfWeek(selectedWeekStart) };
+        filtered = expenses.filter(expense => isWithinInterval(expense.date, weekInterval));
+        break;
       case 'month':
         options = recentMonths;
         label = recentMonths.find(m => m.value === period)?.label || 'Selected Month';
@@ -100,7 +117,8 @@ export function DateFilterProvider({ children }: { children: React.ReactNode }) 
   
   // Reset period when timeframe changes
   React.useEffect(() => {
-    if (timeframe === 'month') setPeriod(recentMonths[0].value);
+    if (timeframe === 'week') setPeriod(recentWeeks[0].value);
+    else if (timeframe === 'month') setPeriod(recentMonths[0].value);
     else if (timeframe === 'year') setPeriod(currentYear.toString());
     else setPeriod('all');
   }, [timeframe]);
@@ -142,6 +160,7 @@ export function DateFilterControls({ disabled }: { disabled?: boolean }) {
           <SelectValue placeholder="Select timeframe" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="week">Week</SelectItem>
           <SelectItem value="month">Month</SelectItem>
           <SelectItem value="year">Year</SelectItem>
           <SelectItem value="all">All Time</SelectItem>
