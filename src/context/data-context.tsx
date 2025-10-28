@@ -1,7 +1,7 @@
 
 'use client';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { collection, doc, setDoc, deleteDoc, serverTimestamp, query, orderBy, onSnapshot, writeBatch, getDocs, where, getDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, serverTimestamp, query, orderBy, onSnapshot, writeBatch, getDocs, where, getDoc, Timestamp } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { initialCategories as defaultCategories } from '@/lib/data';
@@ -10,9 +10,7 @@ import {
   setDocumentNonBlocking,
   deleteDocumentNonBlocking,
 } from '@/firebase/non-blocking-updates';
-import { Timestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { getIcon } from '@/lib/icons';
 
 function restoreCategoryIcons(storedCategories: Omit<Category, 'icon'>[]): Category[] {
     const initialCategoryMap = new Map(defaultCategories.map(cat => [cat.id, cat.icon]));
@@ -192,16 +190,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const addExpense = useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
     const newId = uuidv4();
-    const optimisticExpense = { ...newExpenseData, id: newId, date: new Date() };
-
     if (expensesRef) {
-      setExpenses(prev => [optimisticExpense, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
-      
       const docRef = doc(expensesRef, newId);
       const dataForFirestore = { ...newExpenseData, date: serverTimestamp() };
       setDocumentNonBlocking(docRef, dataForFirestore, {});
     } else {
-      setExpenses(prev => [optimisticExpense, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
+      const newExpense = { ...newExpenseData, id: newId, date: new Date() };
+      setExpenses(prev => [newExpense, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
     }
   }, [expensesRef]);
 
@@ -227,16 +222,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const addEarning = useCallback((newEarningData: Omit<Earning, 'id'|'date'>) => {
     const newId = uuidv4();
-    const optimisticEarning = { ...newEarningData, id: newId, date: new Date() };
-
     if (earningsRef) {
-      setEarnings(prev => [optimisticEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
-
       const docRef = doc(earningsRef, newId);
       const dataForFirestore = { ...newEarningData, date: serverTimestamp() };
       setDocumentNonBlocking(docRef, dataForFirestore, {});
     } else {
-      setEarnings(prev => [optimisticEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
+      const newEarning = { ...newEarningData, id: newId, date: new Date() };
+      setEarnings(prev => [newEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
     }
   }, [earningsRef]);
 
@@ -495,5 +487,3 @@ export function useDataContext() {
   }
   return context;
 }
-
-    
