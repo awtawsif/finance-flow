@@ -193,11 +193,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [budgetsRef]);
 
   const addExpense = useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
+    const newExpense = { ...newExpenseData, id: uuidv4(), date: new Date() };
     if (expensesRef) {
+      // Optimistically update UI
+      setExpenses(prev => [newExpense, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
+      
       const data = { ...newExpenseData, date: serverTimestamp() };
+      // The `id` is part of the optimistic update but not sent to Firestore `addDoc`
       addDocumentNonBlocking(expensesRef, data);
     } else {
-      const newExpense = { ...newExpenseData, id: uuidv4(), date: new Date() };
       setExpenses(prev => [newExpense, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
     }
   }, [expensesRef]);
@@ -223,11 +227,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [expensesRef]);
 
   const addEarning = useCallback((newEarningData: Omit<Earning, 'id'|'date'>) => {
+    const newEarning = { ...newEarningData, id: uuidv4(), date: new Date() };
     if (earningsRef) {
+      // Optimistically update UI
+      setEarnings(prev => [newEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
+
       const data = { ...newEarningData, date: serverTimestamp() };
       addDocumentNonBlocking(earningsRef, data);
     } else {
-      const newEarning = { ...newEarningData, id: uuidv4(), date: new Date() };
       setEarnings(prev => [newEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
     }
   }, [earningsRef]);
