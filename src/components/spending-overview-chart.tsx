@@ -1,9 +1,7 @@
-
 "use client"
 
 import * as React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
-import { isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import {
   Card,
   CardContent,
@@ -15,14 +13,13 @@ import { Button } from '@/components/ui/button';
 import { useDataContext } from '@/context/data-context';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { DateFilterControls, useDateFilter } from './date-filter-controls';
 
-
-type TimeRange = 'week' | 'month' | 'all';
 type ChartView = 'by_category' | 'by_item';
 
 export function SpendingOverviewChart() {
-  const { expenses, categories } = useDataContext();
-  const [timeRange, setTimeRange] = React.useState<TimeRange>('month');
+  const { categories } = useDataContext();
+  const { filteredExpenses, filterLabel } = useDateFilter();
   const [showAll, setShowAll] = React.useState(false);
   const [selectedCategory, setSelectedCategory] = React.useState<{id: string, name: string} | null>(null);
   const isMobile = useIsMobile();
@@ -32,27 +29,8 @@ export function SpendingOverviewChart() {
     [categories]
   );
 
-  const filteredExpenses = React.useMemo(() => {
-    if (expenses.length === 0) return [];
-    const now = new Date();
-    let interval: Interval;
-
-    switch (timeRange) {
-      case 'week':
-        interval = { start: startOfWeek(now), end: endOfWeek(now) };
-        break;
-      case 'month':
-        interval = { start: startOfMonth(now), end: endOfMonth(now) };
-        break;
-      case 'all':
-      default:
-        return expenses;
-    }
-    return expenses.filter(expense => isWithinInterval(expense.date, interval));
-  }, [expenses, timeRange]);
-
   const spendingByCategory = React.useMemo(() => {
-    if (filteredExpenses.length === 0) return [];
+    if (!filteredExpenses || filteredExpenses.length === 0) return [];
 
     const spendingMap = filteredExpenses.reduce((acc, expense) => {
       const category = categoryMap.get(expense.categoryId);
@@ -74,7 +52,7 @@ export function SpendingOverviewChart() {
   }, [filteredExpenses, categoryMap]);
   
   const spendingByItem = React.useMemo(() => {
-    if (!selectedCategory) return [];
+    if (!selectedCategory || !filteredExpenses) return [];
     
     const itemsInCategory = filteredExpenses.filter(e => e.categoryId === selectedCategory.id);
     
@@ -90,12 +68,6 @@ export function SpendingOverviewChart() {
 
     return Object.values(spendingMap).sort((a, b) => a.value - b.value).slice(-10); // show top 10
   }, [filteredExpenses, selectedCategory]);
-
-  const timeRangeLabels: Record<TimeRange, string> = {
-    week: 'this week',
-    month: 'this month',
-    all: 'all time',
-  };
 
   const handlePieClick = (data: any) => {
     setSelectedCategory({ id: data.id, name: data.name });
@@ -138,7 +110,7 @@ export function SpendingOverviewChart() {
     ? `Top Spending in "${selectedCategory.name}"`
     : 'Visual Breakdown';
   
-  const chartDescription = `Breakdown of your expenses for ${timeRangeLabels[timeRange]}.`;
+  const chartDescription = `Breakdown of your expenses for ${filterLabel}.`;
 
   return (
     <Card>
@@ -156,18 +128,7 @@ export function SpendingOverviewChart() {
           </div>
         </div>
          <div className="flex items-center gap-2">
-          {(['week', 'month', 'all'] as TimeRange[]).map((range) => (
-            <Button
-              key={range}
-              variant={timeRange === range ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTimeRange(range)}
-              className="capitalize"
-              disabled={!!selectedCategory}
-            >
-              {range}
-            </Button>
-          ))}
+          <DateFilterControls disabled={!!selectedCategory} />
         </div>
       </CardHeader>
       <CardContent>

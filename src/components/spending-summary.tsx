@@ -1,8 +1,6 @@
-
 'use client';
 
 import * as React from 'react';
-import { isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import {
   Card,
   CardContent,
@@ -11,45 +9,22 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useDataContext } from '@/context/data-context';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import { getIcon } from '@/lib/icons';
-import type { LucideIcon } from 'lucide-react';
-
-type TimeRange = 'week' | 'month' | 'all';
+import { DateFilterControls, useDateFilter } from './date-filter-controls';
 
 export function SpendingSummary() {
-  const { expenses, categories } = useDataContext();
-  const [timeRange, setTimeRange] = React.useState<TimeRange>('month');
+  const { categories } = useDataContext();
+  const { filteredExpenses } = useDateFilter();
 
   const categoryMap = React.useMemo(
     () => new Map(categories.map((cat) => [cat.id, cat])),
     [categories]
   );
 
-  const filteredExpenses = React.useMemo(() => {
-    if (expenses.length === 0) return [];
-    const now = new Date();
-    let interval: Interval;
-
-    switch (timeRange) {
-      case 'week':
-        interval = { start: startOfWeek(now), end: endOfWeek(now) };
-        break;
-      case 'month':
-        interval = { start: startOfMonth(now), end: endOfMonth(now) };
-        break;
-      case 'all':
-      default:
-        return expenses;
-    }
-    return expenses.filter(expense => isWithinInterval(expense.date, interval));
-  }, [expenses, timeRange]);
-
   const spendingData = React.useMemo(() => {
-    if (filteredExpenses.length === 0) return [];
+    if (!filteredExpenses || filteredExpenses.length === 0) return [];
 
     const spendingByCategory = filteredExpenses.reduce((acc, expense) => {
       const category = categoryMap.get(expense.categoryId);
@@ -68,18 +43,12 @@ export function SpendingSummary() {
     }, {} as Record<string, { name: string; value: number; color: string, icon: string }>);
 
     return Object.values(spendingByCategory).sort((a, b) => b.value - a.value);
-  }, [filteredExpenses, categories, categoryMap]);
+  }, [filteredExpenses, categoryMap]);
 
   const totalSpending = React.useMemo(
     () => spendingData.reduce((sum, item) => sum + item.value, 0),
     [spendingData]
   );
-
-  const timeRangeLabels: Record<TimeRange, string> = {
-    week: 'this week',
-    month: 'this month',
-    all: 'all time',
-  };
 
   return (
     <Card>
@@ -87,22 +56,10 @@ export function SpendingSummary() {
         <div>
           <CardTitle>Spending Breakdown</CardTitle>
           <CardDescription>
-            Numerical breakdown of your expenses for {timeRangeLabels[timeRange]}.
+            Numerical breakdown of your expenses.
           </CardDescription>
         </div>
-        <div className="flex items-center gap-2">
-          {(['week', 'month', 'all'] as TimeRange[]).map((range) => (
-            <Button
-              key={range}
-              variant={timeRange === range ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTimeRange(range)}
-              className="capitalize"
-            >
-              {range}
-            </Button>
-          ))}
-        </div>
+        <DateFilterControls />
       </CardHeader>
       <CardContent>
         {spendingData.length > 0 ? (
