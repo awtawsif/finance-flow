@@ -142,7 +142,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (!expensesRef) return;
     const q = query(expensesRef, orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const expensesData = snapshot.docs.map(doc => ({ id: doc.id, ...processFirestoreTimestamp(doc.data()) } as Expense));
+      const expensesData = snapshot.docs
+        .filter(doc => doc.data().date) // Filter out docs where date is not yet set
+        .map(doc => ({ id: doc.id, ...processFirestoreTimestamp(doc.data()) } as Expense));
       setExpenses(expensesData);
     }, (error) => console.error("Expenses snapshot error: ", error));
     return () => unsubscribe();
@@ -152,7 +154,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (!earningsRef) return;
     const q = query(earningsRef, orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const earningsData = snapshot.docs.map(doc => ({ id: doc.id, ...processFirestoreTimestamp(doc.data()) } as Earning));
+      const earningsData = snapshot.docs
+        .filter(doc => doc.data().date) // Filter out docs where date is not yet set
+        .map(doc => ({ id: doc.id, ...processFirestoreTimestamp(doc.data()) } as Earning));
       setEarnings(earningsData);
     }, (error) => console.error("Earnings snapshot error: ", error));
     return () => unsubscribe();
@@ -190,13 +194,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const addExpense = useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
     const newId = uuidv4();
+    const optimisticExpense = { ...newExpenseData, id: newId, date: new Date() };
+
     if (expensesRef) {
+      // Optimistic update
+      setExpenses(prev => [optimisticExpense, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
+      
       const docRef = doc(expensesRef, newId);
+      // Create a separate object for Firestore to avoid mutating the optimistic state
       const dataForFirestore = { ...newExpenseData, date: serverTimestamp() };
       setDocumentNonBlocking(docRef, dataForFirestore, {});
     } else {
-      const newExpense = { ...newExpenseData, id: newId, date: new Date() };
-      setExpenses(prev => [newExpense, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
+      setExpenses(prev => [optimisticExpense, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
     }
   }, [expensesRef]);
 
@@ -222,13 +231,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const addEarning = useCallback((newEarningData: Omit<Earning, 'id'|'date'>) => {
     const newId = uuidv4();
+    const optimisticEarning = { ...newEarningData, id: newId, date: new Date() };
+
     if (earningsRef) {
+       // Optimistic update
+      setEarnings(prev => [optimisticEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
+
       const docRef = doc(earningsRef, newId);
+      // Create a separate object for Firestore
       const dataForFirestore = { ...newEarningData, date: serverTimestamp() };
       setDocumentNonBlocking(docRef, dataForFirestore, {});
     } else {
-      const newEarning = { ...newEarningData, id: newId, date: new Date() };
-      setEarnings(prev => [newEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
+      setEarnings(prev => [optimisticEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
     }
   }, [earningsRef]);
 
