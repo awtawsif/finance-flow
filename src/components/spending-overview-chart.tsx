@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from 'react';
@@ -70,7 +71,12 @@ export function SpendingOverviewChart() {
   }, [filteredExpenses, selectedCategory]);
 
   const handlePieClick = (data: any) => {
-    setSelectedCategory({ id: data.id, name: data.name });
+    // The data object from recharts can come from the pie slice or the legend payload
+    const categoryId = data.id || data.payload?.id;
+    const categoryName = data.name || data.payload?.name;
+    if (categoryId && categoryName) {
+      setSelectedCategory({ id: categoryId, name: categoryName });
+    }
   };
   
   const handleBackClick = () => {
@@ -86,7 +92,11 @@ export function SpendingOverviewChart() {
         <div className="flex flex-col items-center mt-4">
             <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2">
                 {payload.map((entry: any, index: number) => (
-                    <li key={`item-${index}`} className="flex items-center text-sm">
+                    <li 
+                      key={`item-${index}`} 
+                      className="flex items-center text-sm cursor-pointer rounded-md px-2 py-1 transition-colors hover:bg-muted"
+                      onClick={() => handlePieClick(entry)}
+                    >
                         <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: entry.color }} />
                         <span>{entry.value}</span>
                     </li>
