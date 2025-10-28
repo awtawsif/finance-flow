@@ -45,12 +45,16 @@ export function SearchResults() {
     if (!searchQuery) {
       return [];
     }
+    const lowercasedQuery = searchQuery.toLowerCase();
     return expenses
-      .filter((expense) =>
-        expense.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      .filter((expense) => {
+        const descriptionMatch = expense.description.toLowerCase().includes(lowercasedQuery);
+        const category = categoryMap.get(expense.categoryId);
+        const categoryMatch = category ? category.name.toLowerCase().includes(lowercasedQuery) : false;
+        return descriptionMatch || categoryMatch;
+      })
       .sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [expenses, searchQuery]);
+  }, [expenses, categories, searchQuery, categoryMap]);
 
   const totalSpent = React.useMemo(() => {
     return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -72,12 +76,12 @@ export function SearchResults() {
       <CardHeader>
         <CardTitle>Search Expenses</CardTitle>
         <CardDescription>
-          Find specific expenses by searching their description.
+          Find specific expenses by searching their description or category.
         </CardDescription>
         <div className="relative mt-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search for an expense..."
+            placeholder="Search by description or category..."
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -89,7 +93,7 @@ export function SearchResults() {
           {filteredExpenses.length > 0 ? (
             <div className="space-y-6">
               <SummaryCard
-                title={`Total spent on "${searchQuery}"`}
+                title={`Total spent for "${searchQuery}"`}
                 value={`Tk ${totalSpent.toFixed(2)}`}
                 description={`Found ${filteredExpenses.length} transaction(s).`}
               />
