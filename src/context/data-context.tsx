@@ -210,7 +210,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [shortcutsRef]);
 
-  const addExpense = useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
+  const addExpense = useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>): string => {
     const newId = uuidv4();
     const optimisticExpense = { ...newExpenseData, id: newId, date: new Date() };
 
