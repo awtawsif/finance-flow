@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -30,7 +31,7 @@ export function ShortcutsQuickAccess() {
       title: 'Expense Added',
       description: `Added "${shortcut.description}" from your shortcuts.`,
       action: (
-        <ToastAction altText="Undo" onClick={() => deleteExpense(newExpenseId)}>
+        <ToastAction altText="Undo" onClick={() => deleteExpense(newExpenseId)} className="bg-accent text-accent-foreground hover:bg-accent/90">
           Undo
         </ToastAction>
       ),
