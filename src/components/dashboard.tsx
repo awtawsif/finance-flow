@@ -6,7 +6,7 @@ import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
-import { Shapes, Download, Upload, MoreHorizontal, AlertTriangle } from 'lucide-react';
+import { Shapes, Download, Upload, MoreHorizontal, AlertTriangle, Bolt } from 'lucide-react';
 import { EditExpense } from '@/components/edit-expense';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +37,10 @@ import { useDataContext } from '@/context/data-context';
 import { SpendingSummary } from './spending-summary';
 import { SearchResults } from './search-results';
 import { DateFilterProvider } from './date-filter-controls';
+import { ManageShortcuts } from './manage-shortcuts';
+import { AddShortcut } from './add-shortcut';
+import { EditShortcut } from './edit-shortcut';
+import { ShortcutsQuickAccess } from './shortcuts-quick-access';
 
 
 export default function Dashboard() {
@@ -50,6 +54,8 @@ export default function Dashboard() {
     setEarningToEdit,
     categoryToEdit,
     setCategoryToEdit,
+    shortcutToEdit,
+    setShortcutToEdit,
     handleExportData,
     handleImportClick,
     fileInputRef,
@@ -98,6 +104,14 @@ export default function Dashboard() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuGroup>
+                   <DropdownMenuItem onSelect={() => document.getElementById('add-shortcut-trigger')?.click()}>
+                    <Bolt className="mr-2 h-4 w-4" />
+                    Add Shortcut
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => document.getElementById('manage-shortcuts-trigger')?.click()}>
+                    <Shapes className="mr-2 h-4 w-4" />
+                    Manage Shortcuts
+                  </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => document.getElementById('add-category-trigger')?.click()}>
                     <Shapes className="mr-2 h-4 w-4" />
                     Add Category
@@ -154,6 +168,8 @@ export default function Dashboard() {
 
         <SearchResults />
 
+        <ShortcutsQuickAccess />
+
         <DateFilterProvider>
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
             <div className="grid gap-6">
@@ -170,6 +186,9 @@ export default function Dashboard() {
       </div>
       
       <AddCategory />
+      <AddShortcut />
+      <ManageShortcuts />
+
 
       {expenseToEdit && (
         <EditExpense
@@ -189,6 +208,13 @@ export default function Dashboard() {
         <EditCategory
           category={categoryToEdit}
           onClose={() => setCategoryToEdit(null)}
+        />
+      )}
+      
+       {shortcutToEdit && (
+        <EditShortcut
+          shortcut={shortcutToEdit}
+          onClose={() => setShortcutToEdit(null)}
         />
       )}
       

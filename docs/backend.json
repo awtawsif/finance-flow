@@ -129,6 +129,41 @@
         "id",
         "limit"
       ]
+    },
+    "Shortcut": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Shortcut",
+      "type": "object",
+      "description": "Represents a user-defined shortcut for quick expense entry.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Shortcut entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "User-friendly name for the shortcut (e.g., 'Morning Coffee')."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the expense to be created."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the expense."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the Category for this expense."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "amount",
+        "categoryId"
+      ]
     }
   },
   "auth": {
@@ -166,6 +201,12 @@
         "$ref": "#/entities/Budget"
       },
       "description": "Stores budgets for a user, where the document ID is the categoryId."
+    },
+    "/users/{userId}/shortcuts/{shortcutId}": {
+      "schema": {
+        "$ref": "#/entities/Shortcut"
+      },
+      "description": "Stores expense shortcuts for a user."
     }
   }
 }

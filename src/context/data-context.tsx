@@ -5,7 +5,7 @@ import { collection, doc, setDoc, deleteDoc, serverTimestamp, query, orderBy, on
 import { useFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { initialCategories as defaultCategories } from '@/lib/data';
-import type { Expense, Category, Earning } from '@/lib/definitions';
+import type { Expense, Category, Earning, Shortcut } from '@/lib/definitions';
 import {
   setDocumentNonBlocking,
   deleteDocumentNonBlocking,
@@ -40,6 +40,7 @@ interface DataContextProps {
   earnings: Earning[];
   categories: Category[];
   budgets: Record<string, number>;
+  shortcuts: Shortcut[];
   addExpense: (expense: Omit<Expense, 'id' | 'date'>) => void;
   updateExpense: (expense: Expense) => void;
   deleteExpense: (id: string) => void;
@@ -50,12 +51,17 @@ interface DataContextProps {
   updateCategory: (category: Category) => void;
   deleteCategory: (id: string) => void;
   setBudget: (categoryId: string, limit: number) => void;
+  addShortcut: (shortcut: Omit<Shortcut, 'id'>) => void;
+  updateShortcut: (shortcut: Shortcut) => void;
+  deleteShortcut: (id: string) => void;
   expenseToEdit: Expense | null;
   setExpenseToEdit: (expense: Expense | null) => void;
   earningToEdit: Earning | null;
   setEarningToEdit: (earning: Earning | null) => void;
   categoryToEdit: Category | null;
   setCategoryToEdit: (category: Category | null) => void;
+  shortcutToEdit: Shortcut | null;
+  setShortcutToEdit: (shortcut: Shortcut | null) => void;
   handleExportData: () => void;
   handleImportClick: () => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
@@ -80,10 +86,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [categories, setCategories] = useState<Category[]>(defaultCategories);
   const [budgets, setBudgets] = useState<Record<string, number>>({});
+  const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
   
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
   const [earningToEdit, setEarningToEdit] = useState<Earning | null>(null);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
+  const [shortcutToEdit, setShortcutToEdit] = useState<Shortcut | null>(null);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
   const [showNukeConfirm, setShowNukeConfirm] = useState(false);
   const [importedData, setImportedData] = useState<any>(null);
@@ -101,23 +109,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (isUserLoading || userId) return;
 
     const localExpenses = localStorage.getItem('expenses');
-    if (localExpenses) {
-      setExpenses(JSON.parse(localExpenses).map(processFirestoreTimestamp));
-    }
+    if (localExpenses) setExpenses(JSON.parse(localExpenses).map(processFirestoreTimestamp));
+    
     const localEarnings = localStorage.getItem('earnings');
-    if (localEarnings) {
-      setEarnings(JSON.parse(localEarnings).map(processFirestoreTimestamp));
-    }
+    if (localEarnings) setEarnings(JSON.parse(localEarnings).map(processFirestoreTimestamp));
+    
     const localCategories = localStorage.getItem('categories');
-    if (localCategories) {
-      setCategories(restoreCategoryIcons(JSON.parse(localCategories)));
-    } else {
-      setCategories(defaultCategories);
-    }
+    if (localCategories) setCategories(restoreCategoryIcons(JSON.parse(localCategories)));
+    else setCategories(defaultCategories);
+
     const localBudgets = localStorage.getItem('budgets');
-    if (localBudgets) {
-      setBudgets(JSON.parse(localBudgets));
-    }
+    if (localBudgets) setBudgets(JSON.parse(localBudgets));
+
+    const localShortcuts = localStorage.getItem('shortcuts');
+    if (localShortcuts) setShortcuts(JSON.parse(localShortcuts));
+
   }, [isUserLoading, userId]);
 
   // Effect to manage local storage saving
@@ -127,8 +133,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('earnings', JSON.stringify(earnings));
       localStorage.setItem('categories', JSON.stringify(categories));
       localStorage.setItem('budgets', JSON.stringify(budgets));
+      localStorage.setItem('shortcuts', JSON.stringify(shortcuts));
     }
-  }, [expenses, earnings, categories, budgets, isClient, userId]);
+  }, [expenses, earnings, categories, budgets, shortcuts, isClient, userId]);
 
 
   // Firebase refs
@@ -136,6 +143,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const earningsRef = useMemo(() => userId ? collection(firestore, 'users', userId, 'earnings') : null, [firestore, userId]);
   const categoriesRef = useMemo(() => userId ? collection(firestore, 'users', userId, 'categories') : null, [firestore, userId]);
   const budgetsRef = useMemo(() => userId ? collection(firestore, 'users', userId, 'budgets') : null, [firestore, userId]);
+  const shortcutsRef = useMemo(() => userId ? collection(firestore, 'users', userId, 'shortcuts') : null, [firestore, userId]);
+
 
   // Firebase Snapshots
   useEffect(() => {
@@ -143,7 +152,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const q = query(expensesRef, orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const expensesData = snapshot.docs
-        .filter(doc => doc.data().date) // Filter out docs where date is not yet set
+        .filter(doc => doc.data().date)
         .map(doc => ({ id: doc.id, ...processFirestoreTimestamp(doc.data()) } as Expense));
       setExpenses(expensesData);
     }, (error) => console.error("Expenses snapshot error: ", error));
@@ -155,7 +164,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const q = query(earningsRef, orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const earningsData = snapshot.docs
-        .filter(doc => doc.data().date) // Filter out docs where date is not yet set
+        .filter(doc => doc.data().date)
         .map(doc => ({ id: doc.id, ...processFirestoreTimestamp(doc.data()) } as Earning));
       setEarnings(earningsData);
     }, (error) => console.error("Earnings snapshot error: ", error));
@@ -192,16 +201,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [budgetsRef]);
 
+  useEffect(() => {
+    if (!shortcutsRef) return;
+    const unsubscribe = onSnapshot(shortcutsRef, (snapshot) => {
+      const shortcutsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Shortcut));
+      setShortcuts(shortcutsData);
+    }, (error) => console.error("Shortcuts snapshot error: ", error));
+    return () => unsubscribe();
+  }, [shortcutsRef]);
+
   const addExpense = useCallback((newExpenseData: Omit<Expense, 'id' | 'date'>) => {
     const newId = uuidv4();
     const optimisticExpense = { ...newExpenseData, id: newId, date: new Date() };
 
     if (expensesRef) {
-      // Optimistic update
       setExpenses(prev => [optimisticExpense, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
       
       const docRef = doc(expensesRef, newId);
-      // Create a separate object for Firestore to avoid mutating the optimistic state
       const dataForFirestore = { ...newExpenseData, date: serverTimestamp() };
       setDocumentNonBlocking(docRef, dataForFirestore, {});
     } else {
@@ -234,11 +250,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const optimisticEarning = { ...newEarningData, id: newId, date: new Date() };
 
     if (earningsRef) {
-       // Optimistic update
       setEarnings(prev => [optimisticEarning, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
 
       const docRef = doc(earningsRef, newId);
-      // Create a separate object for Firestore
       const dataForFirestore = { ...newEarningData, date: serverTimestamp() };
       setDocumentNonBlocking(docRef, dataForFirestore, {});
     } else {
@@ -306,16 +320,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
         const batch = writeBatch(firestore);
         
-        // Delete the category document
         batch.delete(categoryDocRef);
         
-        // Check if the budget document exists before trying to delete it
         const budgetDocSnap = await getDoc(budgetDocRef);
         if (budgetDocSnap.exists()) {
           batch.delete(budgetDocRef);
         }
         
-        // Find and delete all expenses associated with the category
         const expenseSnapshot = await getDocs(expensesToDeleteQuery);
         expenseSnapshot.forEach(doc => batch.delete(doc.ref));
         
@@ -325,7 +336,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         toast({ variant: "destructive", title: "Error", description: "Could not delete category." });
       }
     } else {
-      // Local data deletion
       setCategories(prev => prev.filter(c => c.id !== categoryId));
       setExpenses(prev => prev.filter(e => e.categoryId !== categoryId));
       setBudgets(prev => {
@@ -336,12 +346,44 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userId, firestore, categoriesRef, expensesRef, budgetsRef, toast]);
 
+  const addShortcut = useCallback((shortcutData: Omit<Shortcut, 'id'>) => {
+    const newId = uuidv4();
+    if (shortcutsRef) {
+      const docRef = doc(shortcutsRef, newId);
+      setDocumentNonBlocking(docRef, shortcutData, {});
+    } else {
+      const newShortcut = { ...shortcutData, id: newId };
+      setShortcuts(prev => [...prev, newShortcut]);
+    }
+  }, [shortcutsRef]);
+
+  const updateShortcut = useCallback((updatedShortcut: Shortcut) => {
+    if (shortcutsRef) {
+      const docRef = doc(shortcutsRef, updatedShortcut.id);
+      const { id, ...data } = updatedShortcut;
+      setDocumentNonBlocking(docRef, data, { merge: true });
+    } else {
+      setShortcuts(prev => prev.map(s => s.id === updatedShortcut.id ? updatedShortcut : s));
+    }
+    setShortcutToEdit(null);
+  }, [shortcutsRef]);
+
+  const deleteShortcut = useCallback((shortcutId: string) => {
+    if (shortcutsRef) {
+      const docRef = doc(shortcutsRef, shortcutId);
+      deleteDocumentNonBlocking(docRef);
+    } else {
+      setShortcuts(prev => prev.filter(s => s.id !== shortcutId));
+    }
+  }, [shortcutsRef]);
+
   const handleExportData = () => {
     const dataToExport = {
       expenses,
       earnings,
       categories,
       budgets,
+      shortcuts,
     };
     const dataStr = JSON.stringify(dataToExport, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -391,7 +433,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
         const batch = writeBatch(firestore);
         // Clear existing data first
-        const collections = ['expenses', 'earnings', 'categories', 'budgets'];
+        const collections = ['expenses', 'earnings', 'categories', 'budgets', 'shortcuts'];
         for (const colName of collections) {
           const snapshot = await getDocs(collection(firestore, 'users', userId, colName));
           snapshot.forEach(doc => batch.delete(doc.ref));
@@ -404,6 +446,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         importedData.expenses.forEach((exp: any) => newBatch.set(doc(firestore, 'users', userId, 'expenses', exp.id), { ...exp, date: new Date(exp.date) }));
         (importedData.earnings || []).forEach((earn: any) => newBatch.set(doc(firestore, 'users', userId, 'earnings', earn.id), { ...earn, date: new Date(earn.date) }));
         Object.entries(importedData.budgets).forEach(([catId, limit]) => newBatch.set(doc(firestore, 'users', userId, 'budgets', catId), { limit }));
+        (importedData.shortcuts || []).forEach((sc: any) => newBatch.set(doc(firestore, 'users', userId, 'shortcuts', sc.id), sc));
+
         await newBatch.commit();
         toast({ title: 'Import Successful', description: 'Your data has been restored.' });
       } catch (error) {
@@ -415,6 +459,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setEarnings((importedData.earnings || []).map(processFirestoreTimestamp));
       setCategories(restoreCategoryIcons(importedData.categories));
       setBudgets(importedData.budgets);
+      setShortcuts(importedData.shortcuts || []);
       toast({ title: 'Import Successful', description: 'Your data has been restored locally.' });
     }
     
@@ -424,7 +469,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   
   const confirmNuke = async () => {
     if (userId && firestore) {
-      const collections = ['expenses', 'earnings', 'categories', 'budgets'];
+      const collections = ['expenses', 'earnings', 'categories', 'budgets', 'shortcuts'];
       try {
         const batch = writeBatch(firestore);
         for (const collectionName of collections) {
@@ -443,10 +488,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setEarnings([]);
       setCategories(defaultCategories);
       setBudgets({});
+      setShortcuts([]);
       localStorage.removeItem('expenses');
       localStorage.removeItem('earnings');
       localStorage.removeItem('categories');
       localStorage.removeItem('budgets');
+      localStorage.removeItem('shortcuts');
       toast({ variant: 'destructive', title: 'Local Data Cleared', description: 'All your local data has been deleted.' });
     }
     setShowNukeConfirm(false);
@@ -459,6 +506,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     earnings,
     categories,
     budgets,
+    shortcuts,
     addExpense,
     updateExpense,
     deleteExpense,
@@ -469,12 +517,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     updateCategory,
     deleteCategory,
     setBudget,
+    addShortcut,
+    updateShortcut,
+    deleteShortcut,
     expenseToEdit,
     setExpenseToEdit,
     earningToEdit,
     setEarningToEdit,
     categoryToEdit,
     setCategoryToEdit,
+    shortcutToEdit,
+    setShortcutToEdit,
     handleExportData,
     handleImportClick,
     fileInputRef,

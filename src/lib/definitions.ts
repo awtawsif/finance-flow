@@ -30,3 +30,11 @@ export type Budget = {
   categoryId: string;
   limit: number;
 };
+
+export type Shortcut = {
+  id: string;
+  name: string;
+  description: string;
+  amount: number;
+  categoryId: string;
+};

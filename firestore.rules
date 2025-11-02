@@ -11,6 +11,7 @@
  * - /users/{userId}/categories/{categoryId}: Stores expense categories for a user. Only the authenticated user can read/write their own categories.
  * - /users/{userId}/earnings/{earningId}: Stores earning records for a user. Only the authenticated user can read/write their own earnings.
  * - /users/{userId}/budgets/{budgetId}: Stores budget information for a user. Only the authenticated user can read/write their own budgets.
+ * - /users/{userId}/shortcuts/{shortcutId}: Stores expense shortcuts for a user. Only the authenticated user can read/write their own shortcuts.
  *
  * Key Security Decisions:
  * - No global admin roles are defined.
@@ -166,6 +167,25 @@ service cloud.firestore {
      * @principle Enforces user ownership for budget data.
      */
     match /users/{userId}/budgets/{budgetId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+       function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to shortcut documents under a user.
+     * @path /users/{userId}/shortcuts/{shortcutId}
+     * @principle Enforces user ownership for expense shortcut data.
+     */
+    match /users/{userId}/shortcuts/{shortcutId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
