@@ -64,7 +64,7 @@ export function ShortcutsQuickAccess() {
               >
                 <div className="flex items-center gap-2">
                    <div className="flex h-8 w-8 items-center justify-center rounded-md" style={{ backgroundColor: `${category?.color}20` }}>
-                    <Icon className="h-5 w-5" style={{ color: category?.color }}/>
+                    <Icon className="h-5 w-5 group-hover:text-accent-foreground" style={{ color: category?.color }}/>
                    </div>
                    <span className="font-semibold">{shortcut.name}</span>
                 </div>
