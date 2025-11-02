@@ -41,7 +41,7 @@ interface DataContextProps {
   categories: Category[];
   budgets: Record<string, number>;
   shortcuts: Shortcut[];
-  addExpense: (expense: Omit<Expense, 'id' | 'date'>) => void;
+  addExpense: (expense: Omit<Expense, 'id' | 'date'>) => string;
   updateExpense: (expense: Expense) => void;
   deleteExpense: (id: string) => void;
   addEarning: (earning: Omit<Earning, 'id' | 'date'>) => void;
@@ -223,6 +223,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } else {
       setExpenses(prev => [optimisticExpense, ...prev].sort((a,b) => b.date.getTime() - a.date.getTime()));
     }
+    return newId;
   }, [expensesRef]);
 
   const updateExpense = useCallback((updatedExpense: Expense) => {

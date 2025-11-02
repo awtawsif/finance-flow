@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useDataContext } from '@/context/data-context';
 import { useToast } from '@/hooks/use-toast';
 import { getIcon } from '@/lib/icons';
+import { ToastAction } from '@/components/ui/toast';
 
 export function ShortcutsQuickAccess() {
-  const { shortcuts, categories, addExpense } = useDataContext();
+  const { shortcuts, categories, addExpense, deleteExpense } = useDataContext();
   const { toast } = useToast();
 
   const categoryMap = React.useMemo(() => {
@@ -19,7 +20,7 @@ export function ShortcutsQuickAccess() {
     const shortcut = shortcuts.find(s => s.id === shortcutId);
     if (!shortcut) return;
 
-    addExpense({
+    const newExpenseId = addExpense({
       description: shortcut.description,
       amount: shortcut.amount,
       categoryId: shortcut.categoryId,
@@ -28,6 +29,11 @@ export function ShortcutsQuickAccess() {
     toast({
       title: 'Expense Added',
       description: `Added "${shortcut.description}" from your shortcuts.`,
+      action: (
+        <ToastAction altText="Undo" onClick={() => deleteExpense(newExpenseId)}>
+          Undo
+        </ToastAction>
+      ),
     });
   };
 
