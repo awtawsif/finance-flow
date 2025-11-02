@@ -59,7 +59,7 @@ export function ShortcutsQuickAccess() {
               <Button
                 key={shortcut.id}
                 variant="outline"
-                className="flex h-auto flex-col items-start justify-start p-3 gap-1.5"
+                className="group flex h-auto flex-col items-start justify-start p-3 gap-1.5"
                 onClick={() => handleShortcutClick(shortcut.id)}
               >
                 <div className="flex items-center gap-2">
@@ -69,8 +69,8 @@ export function ShortcutsQuickAccess() {
                    <span className="font-semibold">{shortcut.name}</span>
                 </div>
                 <div className="pl-10 text-left">
-                  <p className="text-xs text-muted-foreground">{shortcut.description}</p>
-                  <p className="text-xs font-mono text-muted-foreground">Tk {shortcut.amount.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground group-hover:text-accent-foreground">{shortcut.description}</p>
+                  <p className="text-xs font-mono text-muted-foreground group-hover:text-accent-foreground">Tk {shortcut.amount.toFixed(2)}</p>
                 </div>
               </Button>
             );
