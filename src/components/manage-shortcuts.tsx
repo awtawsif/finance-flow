@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -74,7 +75,10 @@ export function ManageShortcuts() {
                      </div>
                      <div>
                         <p className="font-semibold">{shortcut.name}</p>
-                        <p className="text-sm text-muted-foreground">{shortcut.description} - Tk {shortcut.amount.toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {shortcut.description ? shortcut.description : "No description"}
+                            {shortcut.amount !== null ? ` - Tk ${shortcut.amount.toFixed(2)}` : ""}
+                        </p>
                      </div>
                   </div>
                   <div className="flex gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100">
