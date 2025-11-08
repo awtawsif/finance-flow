@@ -94,7 +94,7 @@ export function AddExpense({ shortcutData, isOpen, onOpenChange }: AddExpensePro
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="hidden">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Expense
         </Button>
