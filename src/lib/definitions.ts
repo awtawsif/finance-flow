@@ -11,7 +11,7 @@ export type Category = {
 // For Firestore, we often deal with Timestamps
 export type Expense_DB = Omit<Expense, 'date' | 'id'> & { date: Timestamp };
 export type Expense = {
-  id: string;
+  id:string;
   description: string;
   amount: number;
   categoryId: string;
@@ -34,7 +34,7 @@ export type Budget = {
 export type Shortcut = {
   id: string;
   name: string;
-  description: string;
-  amount: number;
+  description: string | null;
+  amount: number | null;
   categoryId: string;
 };

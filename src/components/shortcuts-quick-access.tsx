@@ -10,7 +10,7 @@ import { getIcon } from '@/lib/icons';
 import { ToastAction } from '@/components/ui/toast';
 
 export function ShortcutsQuickAccess() {
-  const { shortcuts, categories, addExpense, deleteExpense } = useDataContext();
+  const { shortcuts, categories, addExpense, deleteExpense, setShortcutToApply, setIsAddExpenseOpen } = useDataContext();
   const { toast } = useToast();
 
   const categoryMap = React.useMemo(() => {
@@ -21,21 +21,27 @@ export function ShortcutsQuickAccess() {
     const shortcut = shortcuts.find(s => s.id === shortcutId);
     if (!shortcut) return;
 
-    const newExpenseId = addExpense({
-      description: shortcut.description,
-      amount: shortcut.amount,
-      categoryId: shortcut.categoryId,
-    });
+    if (shortcut.description !== null && shortcut.amount !== null) {
+      const newExpenseId = addExpense({
+        description: shortcut.description,
+        amount: shortcut.amount,
+        categoryId: shortcut.categoryId,
+      });
 
-    toast({
-      title: 'Expense Added',
-      description: `Added "${shortcut.description}" from your shortcuts.`,
-      action: (
-        <ToastAction altText="Undo" onClick={() => deleteExpense(newExpenseId)} className="bg-accent text-accent-foreground hover:bg-accent/90">
-          Undo
-        </ToastAction>
-      ),
-    });
+      toast({
+        title: 'Expense Added',
+        description: `Added "${shortcut.description}" from your shortcuts.`,
+        action: (
+          <ToastAction altText="Undo" onClick={() => deleteExpense(newExpenseId)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+            Undo
+          </ToastAction>
+        ),
+      });
+    } else {
+        // Pre-fill the form
+        setShortcutToApply(shortcut);
+        setIsAddExpenseOpen(true);
+    }
   };
 
   if (shortcuts.length === 0) {
@@ -63,14 +69,22 @@ export function ShortcutsQuickAccess() {
                 onClick={() => handleShortcutClick(shortcut.id)}
               >
                 <div className="flex items-center gap-2">
-                   <div className="flex h-8 w-8 items-center justify-center rounded-md" style={{ backgroundColor: `${category?.color}20` }}>
-                    <Icon className="h-5 w-5 group-hover:text-accent-foreground" style={{ color: category?.color }}/>
+                   <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--icon-bg-color)] transition-colors group-hover:bg-[var(--icon-color)]">
+                    <Icon className="h-5 w-5 text-[var(--icon-color)] transition-colors group-hover:text-accent-foreground" style={{ '--icon-color': category?.color || '#000', '--icon-bg-color': `${category?.color}20` } as React.CSSProperties} />
                    </div>
                    <span className="font-semibold">{shortcut.name}</span>
                 </div>
                 <div className="pl-10 text-left">
-                  <p className="text-xs text-muted-foreground group-hover:text-accent-foreground">{shortcut.description}</p>
-                  <p className="text-xs font-mono text-muted-foreground group-hover:text-accent-foreground">Tk {shortcut.amount.toFixed(2)}</p>
+                    {shortcut.description ? (
+                        <p className="text-xs text-muted-foreground transition-colors group-hover:text-accent-foreground">{shortcut.description}</p>
+                    ) : (
+                         <p className="text-xs text-muted-foreground/70 italic transition-colors group-hover:text-accent-foreground">Description needed</p>
+                    )}
+                    {shortcut.amount ? (
+                        <p className="text-xs font-mono text-muted-foreground transition-colors group-hover:text-accent-foreground">Tk {shortcut.amount.toFixed(2)}</p>
+                    ) : (
+                        <p className="text-xs font-mono text-muted-foreground/70 italic transition-colors group-hover:text-accent-foreground">Amount needed</p>
+                    )}
                 </div>
               </Button>
             );

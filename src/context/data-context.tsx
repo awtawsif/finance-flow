@@ -62,6 +62,10 @@ interface DataContextProps {
   setCategoryToEdit: (category: Category | null) => void;
   shortcutToEdit: Shortcut | null;
   setShortcutToEdit: (shortcut: Shortcut | null) => void;
+  shortcutToApply: Partial<Shortcut> | null;
+  setShortcutToApply: (shortcut: Partial<Shortcut> | null) => void;
+  isAddExpenseOpen: boolean;
+  setIsAddExpenseOpen: (isOpen: boolean) => void;
   handleExportData: () => void;
   handleImportClick: () => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
@@ -92,6 +96,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [earningToEdit, setEarningToEdit] = useState<Earning | null>(null);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [shortcutToEdit, setShortcutToEdit] = useState<Shortcut | null>(null);
+  const [shortcutToApply, setShortcutToApply] = useState<Partial<Shortcut> | null>(null);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
   const [showNukeConfirm, setShowNukeConfirm] = useState(false);
   const [importedData, setImportedData] = useState<any>(null);
@@ -529,6 +535,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setCategoryToEdit,
     shortcutToEdit,
     setShortcutToEdit,
+    shortcutToApply,
+    setShortcutToApply,
+    isAddExpenseOpen,
+    setIsAddExpenseOpen,
     handleExportData,
     handleImportClick,
     fileInputRef,

@@ -56,6 +56,10 @@ export default function Dashboard() {
     setCategoryToEdit,
     shortcutToEdit,
     setShortcutToEdit,
+    shortcutToApply,
+    setShortcutToApply,
+    isAddExpenseOpen,
+    setIsAddExpenseOpen,
     handleExportData,
     handleImportClick,
     fileInputRef,
@@ -94,7 +98,7 @@ export default function Dashboard() {
           </h1>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
              <AddEarning />
-             <AddExpense />
+             <Button onClick={() => setIsAddExpenseOpen(true)}>Add Expense</Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -188,6 +192,17 @@ export default function Dashboard() {
       <AddCategory />
       <AddShortcut />
       <ManageShortcuts />
+
+      <AddExpense 
+        isOpen={isAddExpenseOpen}
+        onOpenChange={(isOpen) => {
+          setIsAddExpenseOpen(isOpen)
+          if (!isOpen) {
+            setShortcutToApply(null)
+          }
+        }}
+        shortcutData={shortcutToApply}
+      />
 
 
       {expenseToEdit && (

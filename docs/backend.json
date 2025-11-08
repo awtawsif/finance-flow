@@ -145,11 +145,17 @@
           "description": "User-friendly name for the shortcut (e.g., 'Morning Coffee')."
         },
         "description": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Description of the expense to be created."
         },
         "amount": {
-          "type": "number",
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Amount of the expense."
         },
         "categoryId": {
@@ -160,8 +166,6 @@
       "required": [
         "id",
         "name",
-        "description",
-        "amount",
         "categoryId"
       ]
     }

@@ -36,6 +36,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useDataContext } from '@/context/data-context';
 import { getIcon } from '@/lib/icons';
+import type { Shortcut } from '@/lib/definitions';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -45,19 +46,33 @@ const formSchema = z.object({
 
 type AddExpenseFormValues = z.infer<typeof formSchema>;
 
-export function AddExpense() {
+interface AddExpenseProps {
+    shortcutData?: Partial<Shortcut> | null;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+}
+
+export function AddExpense({ shortcutData, isOpen, onOpenChange }: AddExpenseProps) {
   const { categories, addExpense } = useDataContext();
-  const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
 
   const form = useForm<AddExpenseFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      description: '',
-      amount: '' as any,
-      categoryId: '',
+      description: shortcutData?.description || '',
+      amount: (shortcutData?.amount as any) || '',
+      categoryId: shortcutData?.categoryId || '',
     },
   });
+
+  React.useEffect(() => {
+    form.reset({
+      description: shortcutData?.description || '',
+      amount: (shortcutData?.amount as any) || '',
+      categoryId: shortcutData?.categoryId || '',
+    });
+  }, [shortcutData, form, isOpen]);
+
 
   function onSubmit(values: AddExpenseFormValues) {
     addExpense(values);
@@ -65,12 +80,19 @@ export function AddExpense() {
       title: 'Expense Added',
       description: `Successfully added "${values.description}".`,
     });
-    form.reset();
-    setIsOpen(false);
+    form.reset({description: '', amount: '' as any, categoryId: ''});
+    onOpenChange(false);
+  }
+  
+  const handleOpenChange = (open: boolean) => {
+    if(!open) {
+      form.reset({description: '', amount: '' as any, categoryId: ''});
+    }
+    onOpenChange(open);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -118,7 +140,7 @@ export function AddExpense() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
