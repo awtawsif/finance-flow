@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -165,12 +166,12 @@ export default function Dashboard() {
           <SummaryCard 
             title="Total Budget (Earnings)" 
             value={`Tk ${totalBudget.toFixed(2)}`}
-            description="Total income recorded for the month."
+            description="Total income recorded across all time."
           />
           <SummaryCard 
             title="Total Spending" 
             value={`Tk ${totalSpending.toFixed(2)}`}
-            description="Your total expenditure for the current month." 
+            description="Your total expenditure across all time." 
           />
           <SummaryCard 
             title="Remaining Cash" 
@@ -274,5 +275,7 @@ export default function Dashboard() {
     </>
   );
 }
+
+    
 
     
