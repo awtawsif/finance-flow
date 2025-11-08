@@ -59,19 +59,38 @@ export function AddExpense({ shortcutData, isOpen, onOpenChange }: AddExpensePro
   const form = useForm<AddExpenseFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      description: shortcutData?.description || '',
-      amount: (shortcutData?.amount as any) || '',
-      categoryId: shortcutData?.categoryId || '',
+      description: '',
+      amount: '' as any,
+      categoryId: '',
     },
   });
 
   React.useEffect(() => {
-    form.reset({
-      description: shortcutData?.description || '',
-      amount: (shortcutData?.amount as any) || '',
-      categoryId: shortcutData?.categoryId || '',
-    });
-  }, [shortcutData, form, isOpen]);
+    if (isOpen) {
+      // Reset form with shortcut data or clear it
+      form.reset({
+        description: shortcutData?.description || '',
+        amount: (shortcutData?.amount as any) || '',
+        categoryId: shortcutData?.categoryId || '',
+      });
+
+      // Set focus on the first empty field if using a shortcut
+      const timer = setTimeout(() => {
+        if (shortcutData) {
+            if (shortcutData.description === null) {
+              form.setFocus('description');
+            } else if (shortcutData.amount === null) {
+              form.setFocus('amount');
+            }
+        } else {
+            // If not a shortcut, focus on description by default
+            form.setFocus('description');
+        }
+      }, 100); // Small delay to ensure dialog is rendered
+
+      return () => clearTimeout(timer);
+    }
+  }, [shortcutData, isOpen, form]);
 
 
   function onSubmit(values: AddExpenseFormValues) {
@@ -80,20 +99,17 @@ export function AddExpense({ shortcutData, isOpen, onOpenChange }: AddExpensePro
       title: 'Expense Added',
       description: `Successfully added "${values.description}".`,
     });
-    form.reset({description: '', amount: '' as any, categoryId: ''});
     onOpenChange(false);
   }
   
   const handleOpenChange = (open: boolean) => {
-    if(!open) {
-      form.reset({description: '', amount: '' as any, categoryId: ''});
-    }
     onOpenChange(open);
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
+        {/* This button is now visually hidden and only used for programmatic trigger */}
         <Button className="hidden">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Expense
@@ -101,9 +117,9 @@ export function AddExpense({ shortcutData, isOpen, onOpenChange }: AddExpensePro
       </DialogTrigger>
       <DialogContent className="w-full sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Expense</DialogTitle>
+          <DialogTitle>{shortcutData ? 'Complete Your Expense' : 'Add New Expense'}</DialogTitle>
           <DialogDescription>
-            Enter the details of your expense. Click save when you're done.
+            {shortcutData ? 'Fill in the remaining details for your shortcut.' : "Enter the details of your expense. Click save when you're done."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
