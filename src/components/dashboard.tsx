@@ -7,7 +7,7 @@ import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
-import { Wallet, MinusCircle, PlusCircle } from 'lucide-react';
+import { Wallet, Receipt, PiggyBank } from 'lucide-react';
 import { EditExpense } from '@/components/edit-expense';
 import { Button } from '@/components/ui/button';
 import {
@@ -93,7 +93,6 @@ export default function Dashboard() {
           </div>
           <div className="flex w-full flex-row flex-wrap gap-2 sm:w-auto">
              <Button onClick={() => setIsAddEarningOpen(true)}>
-                <PlusCircle />
                 Add Earning
              </Button>
              <AddEarning 
@@ -101,7 +100,6 @@ export default function Dashboard() {
                 onOpenChange={setIsAddEarningOpen}
              />
              <Button onClick={() => setIsAddExpenseOpen(true)}>
-                <PlusCircle />
                 Add Expense
              </Button>
             <AddExpense 
@@ -135,14 +133,14 @@ export default function Dashboard() {
             title="Total Spending" 
             value={`Tk ${totalSpending.toFixed(2)}`}
             description="Your total expenditure across all time." 
-            icon={<MinusCircle className="text-red-500" />}
+            icon={<Receipt className="text-red-500" />}
           />
           <SummaryCard 
             title="Remaining Cash" 
             value={`Tk ${remainingBudget.toFixed(2)}`}
             description={remainingBudget >= 0 ? "You are in the green." : "You have spent more than you earned."}
             isPositive={remainingBudget >= 0}
-            icon={<PlusCircle className={remainingBudget >= 0 ? 'text-blue-500' : 'text-destructive'} />}
+            icon={<PiggyBank className={remainingBudget >= 0 ? 'text-blue-500' : 'text-destructive'} />}
           />
         </div>
 
