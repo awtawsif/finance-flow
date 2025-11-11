@@ -56,9 +56,21 @@ export function SearchResults() {
       .sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [expenses, categories, searchQuery, categoryMap]);
 
-  const totalSpent = React.useMemo(() => {
+  const totalSpentInSearch = React.useMemo(() => {
     return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [filteredExpenses]);
+
+  const overallTotalSpending = React.useMemo(() => {
+    return expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  }, [expenses]);
+  
+  const percentageOfTotal = React.useMemo(() => {
+    if (overallTotalSpending === 0) {
+      return 0;
+    }
+    return (totalSpentInSearch / overallTotalSpending) * 100;
+  }, [totalSpentInSearch, overallTotalSpending]);
+
 
   function handleDelete(expense: Expense) {
     deleteExpense(expense.id);
@@ -70,6 +82,8 @@ export function SearchResults() {
   }
   
   if (!expenses.length) return null;
+
+  const summaryDescription = `Found ${filteredExpenses.length} transaction(s), representing ${percentageOfTotal.toFixed(1)}% of total spending.`;
 
   return (
     <Card>
@@ -94,8 +108,8 @@ export function SearchResults() {
             <div className="space-y-6">
               <SummaryCard
                 title={`Total spent for "${searchQuery}"`}
-                value={`Tk ${totalSpent.toFixed(2)}`}
-                description={`Found ${filteredExpenses.length} transaction(s).`}
+                value={`Tk ${totalSpentInSearch.toFixed(2)}`}
+                description={summaryDescription}
               />
               <Table>
                 <TableHeader>
