@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, Pencil, Trash2 } from 'lucide-react';
+import { Search, Pencil, Trash2, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,7 +19,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { SummaryCard } from './summary-card';
 import { useDataContext } from '@/context/data-context';
 import type { Expense } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
@@ -106,11 +105,22 @@ export function SearchResults() {
         <CardContent>
           {filteredExpenses.length > 0 ? (
             <div className="space-y-6">
-              <SummaryCard
-                title={`Total spent for "${searchQuery}"`}
-                value={`Tk ${totalSpentInSearch.toFixed(2)}`}
-                description={summaryDescription}
-              />
+              <Card className="bg-accent/20 border-accent/50">
+                <CardHeader className="flex-row items-center gap-4 space-y-0 pb-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/30">
+                       <Info className="h-6 w-6 text-accent-foreground/80" />
+                    </div>
+                    <div>
+                        <CardTitle className="text-accent-foreground/90">
+                           Total spent for "{searchQuery}"
+                        </CardTitle>
+                        <p className="text-2xl font-bold text-accent-foreground">Tk {totalSpentInSearch.toFixed(2)}</p>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-xs text-accent-foreground/70">{summaryDescription}</p>
+                </CardContent>
+              </Card>
               <Table>
                 <TableHeader>
                   <TableRow>
