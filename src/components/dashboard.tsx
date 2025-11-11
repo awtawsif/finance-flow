@@ -7,17 +7,9 @@ import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
-import { Shapes, Download, Upload, MoreHorizontal, AlertTriangle, Bolt, Wallet, MinusCircle, PlusCircle } from 'lucide-react';
+import { Wallet, MinusCircle, PlusCircle } from 'lucide-react';
 import { EditExpense } from '@/components/edit-expense';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,8 +55,6 @@ export default function Dashboard() {
     setIsAddExpenseOpen,
     isAddEarningOpen,
     setIsAddEarningOpen,
-    handleExportData,
-    handleImportClick,
     fileInputRef,
     handleFileChange,
     showImportConfirm,
@@ -124,48 +114,6 @@ export default function Dashboard() {
                 }}
                 shortcutData={shortcutToApply}
             />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="sr-only">Actions</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuGroup>
-                   <DropdownMenuItem onSelect={() => document.getElementById('add-shortcut-trigger')?.click()}>
-                    <Bolt className="mr-2 h-4 w-4" />
-                    Add Shortcut
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => document.getElementById('manage-shortcuts-trigger')?.click()}>
-                    <Shapes className="mr-2 h-4 w-4" />
-                    Manage Shortcuts
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => document.getElementById('add-category-trigger')?.click()}>
-                    <Shapes className="mr-2 h-4 w-4" />
-                    Add Category
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem onSelect={handleImportClick}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import Data
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={handleExportData}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Data
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem onSelect={() => setShowNukeConfirm(true)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                    <AlertTriangle className="mr-2 h-4 w-4" />
-                    Clear All Data
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <input
               type="file"
               ref={fileInputRef}

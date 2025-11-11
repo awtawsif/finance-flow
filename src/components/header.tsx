@@ -1,8 +1,9 @@
+
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
-import { PiggyBank, LogOut, LogIn } from 'lucide-react';
+import { PiggyBank, LogOut, LogIn, MoreHorizontal, Bolt, Shapes, Upload, Download, AlertTriangle } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,10 +14,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from './ui/skeleton';
 
-export default function Header() {
+interface HeaderProps {
+    handleImportClick: () => void;
+    handleExportData: () => void;
+    setShowNukeConfirm: (show: boolean) => void;
+}
+
+export default function Header({ handleImportClick, handleExportData, setShowNukeConfirm }: HeaderProps) {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
 
@@ -43,7 +51,49 @@ export default function Header() {
           FinanceFlow
         </h1>
       </Link>
-      <div>
+      <div className="flex items-center gap-2">
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+                <MoreHorizontal className="h-5 w-5" />
+                <span className="sr-only">Actions</span>
+            </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+            <DropdownMenuGroup>
+                <DropdownMenuItem onSelect={() => document.getElementById('add-shortcut-trigger')?.click()}>
+                <Bolt className="mr-2 h-4 w-4" />
+                Add Shortcut
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => document.getElementById('manage-shortcuts-trigger')?.click()}>
+                <Shapes className="mr-2 h-4 w-4" />
+                Manage Shortcuts
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => document.getElementById('add-category-trigger')?.click()}>
+                <Shapes className="mr-2 h-4 w-4" />
+                Add Category
+                </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+                <DropdownMenuItem onSelect={handleImportClick}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import Data
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleExportData}>
+                <Download className="mr-2 h-4 w-4" />
+                Export Data
+                </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+                <DropdownMenuItem onSelect={() => setShowNukeConfirm(true)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Clear All Data
+                </DropdownMenuItem>
+            </DropdownMenuGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
         {isUserLoading ? (
           <Skeleton className="h-10 w-10 rounded-full" />
         ) : user ? (

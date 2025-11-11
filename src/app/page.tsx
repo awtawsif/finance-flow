@@ -1,16 +1,27 @@
+
 'use client';
 import { useUser } from '@/firebase';
 import Header from '@/components/header';
 import Dashboard from '@/components/dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDataContext } from '@/context/data-context';
 
 export default function Home() {
   const { isUserLoading } = useUser();
+  const {
+    handleImportClick,
+    handleExportData,
+    setShowNukeConfirm,
+  } = useDataContext();
 
   if (isUserLoading) {
     return (
       <div className="flex min-h-screen w-full flex-col">
-        <Header />
+        <Header 
+          handleImportClick={() => {}}
+          handleExportData={() => {}}
+          setShowNukeConfirm={() => {}}
+        />
         <main className="flex-1 p-4 sm:p-6 md:p-8">
            <div className="flex flex-col gap-8">
               <div className="flex flex-col flex-wrap items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -38,7 +49,11 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <Header />
+      <Header 
+        handleImportClick={handleImportClick}
+        handleExportData={handleExportData}
+        setShowNukeConfirm={setShowNukeConfirm}
+      />
       <main className="flex-1 p-4 sm:p-6 md:p-8">
         <Dashboard />
       </main>
