@@ -5,7 +5,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Pencil, Trash2, Settings } from 'lucide-react';
+import { Pencil, Trash2, Settings, PlusCircle } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -120,6 +120,10 @@ export function BudgetOverview() {
       variant: 'destructive',
     });
   }
+  
+  const handleAddCategoryClick = () => {
+    document.getElementById('add-category-trigger')?.click();
+  };
 
   return (
     <>
@@ -131,6 +135,10 @@ export function BudgetOverview() {
                 Set and track spending goals for your categories.
               </CardDescription>
             </div>
+             <Button size="icon" variant="outline" onClick={handleAddCategoryClick} className="h-8 w-8">
+                <PlusCircle className="h-4 w-4" />
+                <span className="sr-only">Add Category</span>
+            </Button>
           </CardHeader>
         <CardContent>
           <div className="space-y-6">

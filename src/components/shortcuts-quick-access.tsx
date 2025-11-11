@@ -1,7 +1,7 @@
-
 'use client';
 
 import * as React from 'react';
+import { PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDataContext } from '@/context/data-context';
@@ -43,6 +43,10 @@ export function ShortcutsQuickAccess() {
         setIsAddExpenseOpen(true);
     }
   };
+  
+  const handleAddShortcutClick = () => {
+    document.getElementById('add-shortcut-trigger')?.click();
+  };
 
   if (shortcuts.length === 0) {
     return null; // Don't render the card if there are no shortcuts
@@ -50,11 +54,17 @@ export function ShortcutsQuickAccess() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Quick-add Shortcuts</CardTitle>
-        <CardDescription>
-          Click a shortcut to add an expense instantly.
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+            <CardTitle>Quick-add Shortcuts</CardTitle>
+            <CardDescription>
+              Click a shortcut to add an expense instantly.
+            </CardDescription>
+        </div>
+        <Button size="icon" variant="outline" onClick={handleAddShortcutClick} className="h-8 w-8">
+            <PlusCircle className="h-4 w-4" />
+            <span className="sr-only">Add Shortcut</span>
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-2">

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -68,9 +68,15 @@ export function RecentExpenses({ onEditExpense, onAddExpense }: RecentExpensesPr
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Recent Expenses</CardTitle>
-        <CardDescription>A chronological list of your latest transactions.</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+            <CardTitle>Recent Expenses</CardTitle>
+            <CardDescription>A chronological list of your latest transactions.</CardDescription>
+        </div>
+        <Button size="icon" variant="outline" onClick={onAddExpense} className="h-8 w-8">
+            <PlusCircle className="h-4 w-4" />
+            <span className="sr-only">Add Expense</span>
+        </Button>
       </CardHeader>
       <CardContent className="max-h-[500px] overflow-y-auto pr-2">
         {sortedDates.length > 0 ? (
