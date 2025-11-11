@@ -66,6 +66,8 @@ interface DataContextProps {
   setShortcutToApply: (shortcut: Partial<Shortcut> | null) => void;
   isAddExpenseOpen: boolean;
   setIsAddExpenseOpen: (isOpen: boolean) => void;
+  isAddEarningOpen: boolean;
+  setIsAddEarningOpen: (isOpen: boolean) => void;
   handleExportData: () => void;
   handleImportClick: () => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
@@ -98,6 +100,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [shortcutToEdit, setShortcutToEdit] = useState<Shortcut | null>(null);
   const [shortcutToApply, setShortcutToApply] = useState<Partial<Shortcut> | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isAddEarningOpen, setIsAddEarningOpen] = useState(false);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
   const [showNukeConfirm, setShowNukeConfirm] = useState(false);
   const [importedData, setImportedData] = useState<any>(null);
@@ -539,6 +542,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setShortcutToApply,
     isAddExpenseOpen,
     setIsAddExpenseOpen,
+    isAddEarningOpen,
+    setIsAddEarningOpen,
     handleExportData,
     handleImportClick,
     fileInputRef,

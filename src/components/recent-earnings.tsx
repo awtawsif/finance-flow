@@ -30,9 +30,10 @@ import { useDataContext } from '@/context/data-context';
 
 interface RecentEarningsProps {
   onEditEarning: (earning: Earning) => void;
+  onAddEarning: () => void;
 }
 
-export function RecentEarnings({ onEditEarning }: RecentEarningsProps) {
+export function RecentEarnings({ onEditEarning, onAddEarning }: RecentEarningsProps) {
   const { earnings, deleteEarning } = useDataContext();
   const { toast } = useToast();
 
@@ -137,7 +138,7 @@ export function RecentEarnings({ onEditEarning }: RecentEarningsProps) {
       ) : (
           <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border-2 border-dashed">
             <p className="text-muted-foreground">No earnings recorded yet.</p>
-            <Button variant="link" className="mt-2" onClick={() => document.getElementById('add-earning-trigger')?.click()}>Add your first earning</Button>
+            <Button variant="link" className="mt-2" onClick={onAddEarning}>Add your first earning</Button>
           </div>
         )}
       </CardContent>

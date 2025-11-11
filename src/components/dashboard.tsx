@@ -60,6 +60,8 @@ export default function Dashboard() {
     setShortcutToApply,
     isAddExpenseOpen,
     setIsAddExpenseOpen,
+    isAddEarningOpen,
+    setIsAddEarningOpen,
     handleExportData,
     handleImportClick,
     fileInputRef,
@@ -99,7 +101,14 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Here's a summary of your financial activity.</p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-             <AddEarning />
+             <Button onClick={() => setIsAddEarningOpen(true)}>
+                <PlusCircle />
+                Add Earning
+             </Button>
+             <AddEarning 
+                isOpen={isAddEarningOpen}
+                onOpenChange={setIsAddEarningOpen}
+             />
              <Button onClick={() => setIsAddExpenseOpen(true)}>
                 <PlusCircle />
                 Add Expense
@@ -195,12 +204,12 @@ export default function Dashboard() {
         <DateFilterProvider>
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
             <div className="grid gap-6">
-              <RecentExpenses onEditExpense={setExpenseToEdit} />
+              <RecentExpenses onEditExpense={setExpenseToEdit} onAddExpense={() => setIsAddExpenseOpen(true)} />
               <SpendingSummary />
             </div>
             <div className="grid gap-6">
                 <BudgetOverview />
-                <RecentEarnings onEditEarning={setEarningToEdit} />
+                <RecentEarnings onEditEarning={setEarningToEdit} onAddEarning={() => setIsAddEarningOpen(true)} />
                 <SpendingOverviewChart />
               </div>
           </div>

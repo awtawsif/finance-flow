@@ -31,9 +31,10 @@ import { getIcon } from '@/lib/icons';
 
 interface RecentExpensesProps {
   onEditExpense: (expense: Expense) => void;
+  onAddExpense: () => void;
 }
 
-export function RecentExpenses({ onEditExpense }: RecentExpensesProps) {
+export function RecentExpenses({ onEditExpense, onAddExpense }: RecentExpensesProps) {
   const { expenses, categories, deleteExpense } = useDataContext();
   const { toast } = useToast();
   
@@ -155,7 +156,7 @@ export function RecentExpenses({ onEditExpense }: RecentExpensesProps) {
         ) : (
           <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border-2 border-dashed">
             <p className="text-muted-foreground">No expenses recorded yet.</p>
-            <Button variant="link" className="mt-2" onClick={() => document.getElementById('add-expense-trigger')?.click()}>Add your first expense</Button>
+            <Button variant="link" className="mt-2" onClick={onAddExpense}>Add your first expense</Button>
           </div>
         )}
       </CardContent>

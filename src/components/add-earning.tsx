@@ -4,7 +4,6 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -35,9 +34,13 @@ const formSchema = z.object({
 
 type AddEarningFormValues = z.infer<typeof formSchema>;
 
-export function AddEarning() {
+interface AddEarningProps {
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+}
+
+export function AddEarning({ isOpen, onOpenChange }: AddEarningProps) {
   const { addEarning } = useDataContext();
-  const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
 
   const form = useForm<AddEarningFormValues>({
@@ -47,6 +50,13 @@ export function AddEarning() {
       amount: '' as any,
     },
   });
+  
+  React.useEffect(() => {
+    if (isOpen) {
+        form.reset();
+        form.setFocus('description');
+    }
+  }, [isOpen, form]);
 
   function onSubmit(values: AddEarningFormValues) {
     addEarning(values);
@@ -55,14 +65,13 @@ export function AddEarning() {
       description: `Successfully added "${values.description}".`,
     });
     form.reset();
-    setIsOpen(false);
+    onOpenChange(false);
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <PlusCircle />
+        <Button id="add-earning-trigger" variant="outline" className="hidden">
           Add Earning
         </Button>
       </DialogTrigger>
