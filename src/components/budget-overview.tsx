@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -149,7 +150,7 @@ export function BudgetOverview() {
                   <div className="flex justify-between">
                     <p className="font-medium truncate" title={category.name}>{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
-                      <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : 'No budget'}
+                      <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : '--'}
                     </p>
                   </div>
                   {budget > 0 && <Progress value={progress} indicatorClassName={cn(isOverBudget && "bg-destructive")} />}
