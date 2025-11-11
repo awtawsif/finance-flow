@@ -92,14 +92,14 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Here's a summary of your financial activity.</p>
           </div>
           <div className="flex w-full flex-row flex-wrap gap-2 sm:w-auto">
-             <Button onClick={() => setIsAddEarningOpen(true)}>
+             <Button variant="success" onClick={() => setIsAddEarningOpen(true)}>
                 Add Earning
              </Button>
              <AddEarning 
                 isOpen={isAddEarningOpen}
                 onOpenChange={setIsAddEarningOpen}
              />
-             <Button onClick={() => setIsAddExpenseOpen(true)}>
+             <Button variant="destructive" onClick={() => setIsAddExpenseOpen(true)}>
                 Add Expense
              </Button>
             <AddExpense 
