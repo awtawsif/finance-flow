@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -120,12 +119,6 @@ export function BudgetOverview() {
       variant: 'destructive',
     });
   }
-  
-  const categoriesWithSpending = React.useMemo(() => {
-    return categories.filter(category => 
-      expenses.some(d => d.categoryId === category.id)
-    );
-  }, [expenses, categories]);
 
   return (
     <>
@@ -134,7 +127,7 @@ export function BudgetOverview() {
             <div>
               <CardTitle>Category Budgets</CardTitle>
               <CardDescription>
-                Set spending goals for different expense categories.
+                Set and track spending goals for your categories.
               </CardDescription>
             </div>
           </CardHeader>
@@ -156,10 +149,10 @@ export function BudgetOverview() {
                   <div className="flex justify-between">
                     <p className="font-medium truncate" title={category.name}>{category.name}</p>
                     <p className={cn("text-sm text-muted-foreground", isOverBudget && "font-semibold text-destructive")}>
-                      <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : '---'}
+                      <span>Tk {spent.toFixed(2)}</span> / {budget > 0 ? `Tk ${budget.toFixed(2)}` : 'No budget'}
                     </p>
                   </div>
-                  {budget > 0 && <Progress value={progress} className={cn("h-2 mt-1", isOverBudget && "[&>div]:bg-destructive")} />}
+                  {budget > 0 && <Progress value={progress} indicatorClassName={cn(isOverBudget && "bg-destructive")} />}
                 </div>
                 <div className="flex gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDialogTrigger(category)}>

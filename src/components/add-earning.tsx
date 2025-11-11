@@ -4,7 +4,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { DollarSign } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -62,7 +62,7 @@ export function AddEarning() {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <DollarSign className="mr-2 h-4 w-4" />
+          <PlusCircle />
           Add Earning
         </Button>
       </DialogTrigger>

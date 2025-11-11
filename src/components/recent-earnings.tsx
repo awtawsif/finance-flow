@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -65,17 +64,18 @@ export function RecentEarnings({ onEditEarning }: RecentEarningsProps) {
     <Card>
       <CardHeader>
         <CardTitle>Recent Earnings</CardTitle>
-        <CardDescription>Your latest income.</CardDescription>
+        <CardDescription>A chronological list of your latest income.</CardDescription>
       </CardHeader>
-      <CardContent className="max-h-[500px] overflow-y-auto">
-        <Accordion type="multiple" defaultValue={sortedDates.slice(0, 2)}>
+      <CardContent className="max-h-[500px] overflow-y-auto pr-2">
+      {sortedDates.length > 0 ? (
+        <Accordion type="multiple" defaultValue={sortedDates.slice(0, 3)} className="space-y-2">
           {sortedDates.map((date) => {
              const dailyTotal = groupedEarnings[date].reduce((sum, earning) => sum + earning.amount, 0);
             return (
-            <AccordionItem value={date} key={date}>
-              <AccordionTrigger>
-                <div className="flex w-full justify-between items-center pr-2">
-                   <h3 className="font-semibold text-sm text-muted-foreground">
+            <AccordionItem value={date} key={date} className="rounded-lg border-b-0 bg-muted/50 px-3">
+              <AccordionTrigger className="py-3 hover:no-underline">
+                <div className="flex w-full justify-between items-center">
+                   <h3 className="font-semibold text-sm">
                     {format(new Date(date), 'MMMM d, yyyy')}
                   </h3>
                   <p className="text-sm font-semibold text-muted-foreground">Tk {dailyTotal.toFixed(2)}</p>
@@ -87,7 +87,7 @@ export function RecentEarnings({ onEditEarning }: RecentEarningsProps) {
                     <TableRow>
                       <TableHead>Description</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right w-[80px]">Actions</TableHead>
+                      <TableHead className="w-[80px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -96,7 +96,7 @@ export function RecentEarnings({ onEditEarning }: RecentEarningsProps) {
                         <TableCell className="font-medium">{earning.description}</TableCell>
                         <TableCell className="text-right font-mono">{earning.amount.toFixed(2)}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2 md:opacity-0 md:group-hover:opacity-100">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditEarning(earning)}>
                               <Pencil className="h-4 w-4" />
                               <span className="sr-only">Edit Earning</span>
@@ -134,6 +134,12 @@ export function RecentEarnings({ onEditEarning }: RecentEarningsProps) {
             </AccordionItem>
           )})}
         </Accordion>
+      ) : (
+          <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border-2 border-dashed">
+            <p className="text-muted-foreground">No earnings recorded yet.</p>
+            <Button variant="link" className="mt-2" onClick={() => document.getElementById('add-earning-trigger')?.click()}>Add your first earning</Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

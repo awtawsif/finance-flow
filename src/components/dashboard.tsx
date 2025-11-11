@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -7,7 +6,7 @@ import { AddExpense } from '@/components/add-expense';
 import { RecentExpenses } from '@/components/recent-expenses';
 import { BudgetOverview } from '@/components/budget-overview';
 import { AddCategory } from '@/components/add-category';
-import { Shapes, Download, Upload, MoreHorizontal, AlertTriangle, Bolt } from 'lucide-react';
+import { Shapes, Download, Upload, MoreHorizontal, AlertTriangle, Bolt, Wallet, MinusCircle, PlusCircle } from 'lucide-react';
 import { EditExpense } from '@/components/edit-expense';
 import { Button } from '@/components/ui/button';
 import {
@@ -85,7 +84,6 @@ export default function Dashboard() {
 
   const remainingBudget = totalBudget - totalSpending;
   
-  // Render a loading state or nothing until the component has mounted on the client
   if (!isClient) {
     return null;
   }
@@ -94,12 +92,18 @@ export default function Dashboard() {
     <>
       <div className="flex flex-col gap-8">
         <div className="flex flex-col flex-wrap items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-            Welcome Back!
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+              Welcome Back!
+            </h1>
+            <p className="text-muted-foreground">Here's a summary of your financial activity.</p>
+          </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
              <AddEarning />
-             <Button onClick={() => setIsAddExpenseOpen(true)}>Add Expense</Button>
+             <Button onClick={() => setIsAddExpenseOpen(true)}>
+                <PlusCircle />
+                Add Expense
+             </Button>
             <AddExpense 
                 isOpen={isAddExpenseOpen}
                 onOpenChange={(isOpen) => {
@@ -164,20 +168,23 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <SummaryCard 
-            title="Total Budget (Earnings)" 
+            title="Total Earnings" 
             value={`Tk ${totalBudget.toFixed(2)}`}
             description="Total income recorded across all time."
+            icon={<Wallet className="text-green-500" />}
           />
           <SummaryCard 
             title="Total Spending" 
             value={`Tk ${totalSpending.toFixed(2)}`}
             description="Your total expenditure across all time." 
+            icon={<MinusCircle className="text-red-500" />}
           />
           <SummaryCard 
             title="Remaining Cash" 
             value={`Tk ${remainingBudget.toFixed(2)}`}
             description={remainingBudget >= 0 ? "You are in the green." : "You have spent more than you earned."}
             isPositive={remainingBudget >= 0}
+            icon={<PlusCircle className={remainingBudget >= 0 ? 'text-blue-500' : 'text-destructive'} />}
           />
         </div>
 
@@ -275,7 +282,3 @@ export default function Dashboard() {
     </>
   );
 }
-
-    
-
-    

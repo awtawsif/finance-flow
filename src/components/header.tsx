@@ -34,13 +34,15 @@ export default function Header() {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
-      <div className="flex items-center gap-3">
-        <PiggyBank className="h-7 w-7 text-primary" />
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
+      <Link href="/" className="flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <PiggyBank className="h-5 w-5" />
+        </div>
         <h1 className="text-xl font-bold tracking-tight text-foreground">
           FinanceFlow
         </h1>
-      </div>
+      </Link>
       <div>
         {isUserLoading ? (
           <Skeleton className="h-10 w-10 rounded-full" />
@@ -69,7 +71,7 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button asChild variant="outline">
+          <Button asChild variant="ghost">
             <Link href="/login">
               <LogIn className="mr-2 h-4 w-4" />
               Sign In
