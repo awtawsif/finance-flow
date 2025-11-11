@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -100,7 +101,7 @@ export default function Dashboard() {
             </h1>
             <p className="text-muted-foreground">Here's a summary of your financial activity.</p>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <div className="flex w-full flex-row flex-wrap gap-2 sm:w-auto">
              <Button onClick={() => setIsAddEarningOpen(true)}>
                 <PlusCircle />
                 Add Earning
