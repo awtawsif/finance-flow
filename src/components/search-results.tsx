@@ -105,20 +105,20 @@ export function SearchResults() {
         <CardContent>
           {filteredExpenses.length > 0 ? (
             <div className="space-y-6">
-              <Card className="bg-accent/20 border-accent/50">
+              <Card className="bg-accent text-accent-foreground">
                 <CardHeader className="flex-row items-center gap-4 space-y-0 pb-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/30">
-                       <Info className="h-6 w-6 text-accent-foreground/80" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-foreground/10">
+                       <Info className="h-6 w-6 text-accent-foreground" />
                     </div>
                     <div>
-                        <CardTitle className="text-accent-foreground/90">
+                        <CardTitle className="text-accent-foreground">
                            Total spent for "{searchQuery}"
                         </CardTitle>
-                        <p className="text-2xl font-bold text-accent-foreground">Tk {totalSpentInSearch.toFixed(2)}</p>
+                        <p className="text-2xl font-bold">Tk {totalSpentInSearch.toFixed(2)}</p>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-xs text-accent-foreground/70">{summaryDescription}</p>
+                    <p className="text-xs text-accent-foreground/80">{summaryDescription}</p>
                 </CardContent>
               </Card>
               <Table>
