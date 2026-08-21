@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 function restoreCategoryIcons(storedCategories: Omit<Category, 'icon'>[]): Category[] {
     const initialCategoryMap = new Map(defaultCategories.map(cat => [cat.id, cat.icon]));
     return storedCategories.map(cat => {
-        const iconName = (cat as any).iconName || cat.icon || initialCategoryMap.get(cat.id);
+        const iconName = (cat as any).iconName || (cat as any).icon || initialCategoryMap.get(cat.id);
         return {
           ...cat,
           icon: iconName || 'Shapes',

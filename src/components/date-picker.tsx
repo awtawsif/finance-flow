@@ -28,7 +28,7 @@ type DatePickerProps = {
   value: Date | undefined;
   onSelect: (date: Date | undefined) => void;
   className?: string;
-} & React.ComponentProps<typeof DayPicker>;
+} & Omit<React.ComponentProps<typeof DayPicker>, 'mode' | 'selected' | 'onSelect'>;
 
 export function DatePicker({ value, onSelect, className, ...props }: DatePickerProps) {
   const isMobile = useIsMobile();
